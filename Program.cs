@@ -60,7 +60,11 @@ namespace Zephyr
                     }
                 }
 
-                CommandLine.Parser.Default.ParseArguments<CommandLineOptions, CommandLineOptionsInstallPackage, CommandLineOptionsCreatePackage>(runnerArgs.ToArray())
+                CommandLine.Parser.Default.ParseArguments<
+                    CommandLineOptions, CommandLineOptionsInstallPackage,
+                    CommandLineOptionsCreatePackage, CommandLineOptionsRegisterUser,
+                    CommandLineOptionsUploadPackage
+                >(runnerArgs.ToArray())
                        .WithParsed<CommandLineOptions>(o =>
                        {
                            Options = o;
@@ -140,6 +144,12 @@ namespace Zephyr
                        }).WithParsed<CommandLineOptionsInstallPackage>(o =>
                        {
                            PackageManager.InstallPackage(o.PackageName, o.PackageVersion, new Uri(o.RepositoryUrl));
+                       }).WithParsed<CommandLineOptionsRegisterUser>(o =>
+                       {
+                           AccountManagement.Register(o.Username, o.Password, o.RepositoryUrl);
+                       }).WithParsed<CommandLineOptionsUploadPackage>(o =>
+                       {
+                           PackageManager.UploadPackage(new Uri(o.RepositoryUrl), o.Username, o.Password); 
                        });
             } catch (Exception e)
             {

@@ -72,4 +72,30 @@ namespace Zephyr
     {
 
     }
+
+    [Verb("register", HelpText = "Register an account on the repository")]
+    internal class CommandLineOptionsRegisterUser
+    {
+        [Value(0, HelpText = "The username of the user to register", Required = true)]
+        public string Username { get; set; } = "";
+
+        [Value(1, HelpText = "The password of the user to register", Required = true)]
+        public string Password { get; set; } = "";
+
+        [Option('r', "repository", HelpText = "The repository URL to register to", Default = PackageManager.DefaultRepository)]
+        public string RepositoryUrl { get; set; } = PackageManager.DefaultRepository;
+    }
+
+    [Verb("upload-package", HelpText = "Uploads the package in the current directory to the repository")]
+    internal class CommandLineOptionsUploadPackage
+    {
+        [Option('r', "repository", HelpText = "The repository URL to upload to", Default = PackageManager.DefaultRepository)]
+        public string RepositoryUrl { get; set; } = PackageManager.DefaultRepository;
+
+        [Option('u', "username", HelpText = "The username of the user", Required = true)]
+        public string Username { get; set; } = "";
+
+        [Option('p', "password", HelpText = "The password of the user", Required = true)]
+        public string Password { get; set; } = "";
+    }
 }

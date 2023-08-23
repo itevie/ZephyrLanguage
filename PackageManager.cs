@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -154,6 +155,76 @@ namespace Zephyr
             // Save
             File.WriteAllText(Path.Combine(package.Location, "package.json"), JsonConvert.SerializeObject(package.Package, Formatting.Indented));
             Console.WriteLine($"Done in {stopwatch.ElapsedMilliseconds}ms!");
+        }
+
+        public static void UploadPackage(Uri repositoryUrl, string username, string password)
+        {
+            ZephyrPackageWithLocation package = GetZephyrPackage();
+
+            // Fetch all files
+            List<string> files = new();
+
+            foreach (string file in Directory.EnumerateFiles(package.Location, "*.*", SearchOption.AllDirectories)
+                .Where(s => !(Path.GetDirectoryName(s).Contains("zephyr_packages"))))
+            {
+                files.Add(file);
+            }
+
+            long totalSize = 0;
+
+            Console.WriteLine($"Found {files.Count} files to upload");
+            Console.WriteLine($"\n============ {files.Count} files ============");
+            files.ForEach(x =>
+            {
+                long len = new FileInfo(x).Length;
+                totalSize += len;
+                Console.WriteLine($"{x.Replace(package.Location, "")} ({len}b)");
+            });
+            Console.WriteLine($"============ {files.Count} files ============\n");
+            Console.WriteLine($"Total unzipped upload size will be {totalSize}b");
+            Console.WriteLine($"\nYou are uploading {package.Package.Name}@{package.Package.Version} to {repositoryUrl}!");
+            Console.Write($"Confirm upload, use -y to confirm in the future (y/n): ");
+            string? cres = Console.ReadLine();
+
+            // Check if user confirmed
+            if (cres != "y")
+            {
+                Environment.Exit(0);
+                return;
+            }
+
+            // Create ZIP file
+            string zipfileLocation = $"{Path.Combine(package.Location, Guid.NewGuid().ToString())}.zip";
+            Console.WriteLine($"Generating ZIP file... ({zipfileLocation})");
+
+            using (ZipArchive archive = ZipFile.Open(zipfileLocation, ZipArchiveMode.Create))
+            {
+                files.ForEach(file =>
+                {
+                    string name = file.Replace("\\", "/").Replace(package.Location.Replace("\\", "/") + "/", "").Replace(package.Location.Replace("\\", "/"), "");
+                    archive.CreateEntryFromFile(file, name);
+                    Console.WriteLine($"Added {file} ({name}) to archive");
+                });
+            }
+
+            Console.WriteLine($"Uploading archive to {repositoryUrl} ({new FileInfo(zipfileLocation).Length}b)");
+            string zipData = Convert.ToHexString(File.ReadAllBytes(zipfileLocation));
+
+            Console.WriteLine($"Cleaning up...");
+            File.Delete(zipfileLocation);
+
+            // Send request
+            RepositoryHTTP.Post($"{repositoryUrl}package/{package.Package.Name}/{package.Package.Version}/upload", new
+            {
+                username,
+                password,
+                data = zipData
+            }, $"uploading {package.Package.Name}");
+
+            // Done
+            Console.WriteLine($"\n{package.Package.Name}@{package.Package.Version} uploaded successfully!");
+            Console.WriteLine($"\nDownload using zephyr install-package {package.Package.Name} {package.Package.Version}");
+            Console.WriteLine($"Or navigate to {repositoryUrl}package/{package.Package.Name}/{package.Package.Version}");
         }
 
         public static ZephyrPackageWithLocation GetZephyrPackage()
