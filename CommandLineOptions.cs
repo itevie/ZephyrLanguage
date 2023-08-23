@@ -63,8 +63,8 @@ namespace Zephyr
         [Value(0, HelpText = "The version of the package", Default = "@latest")]
         public string PackageVersion { get; set; } = "@latest";
 
-        [Option('r', "repository", HelpText = "The repository URL from which to download the packages", Default = "http://localhost:3000")]
-        public string RepositoryUrl { get; set; } = "";
+        [Option('r', "repository", HelpText = "The repository URL from which to download the packages", Default = PackageManager.DefaultRepository)]
+        public string RepositoryUrl { get; set; } = PackageManager.DefaultRepository;
     }
 
     [Verb("new", HelpText = "Initiate a new Zephyr project / package")]

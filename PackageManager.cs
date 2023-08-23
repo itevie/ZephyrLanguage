@@ -12,6 +12,8 @@ namespace Zephyr
 {
     internal class PackageManager
     {
+        public const string DefaultRepository = "https://zephyrrepository.itevie.repl.co";
+
         public static void InstallPackage(string packageName, string packageVersion, Uri repository)
         {
             Stopwatch stopwatch = new Stopwatch();

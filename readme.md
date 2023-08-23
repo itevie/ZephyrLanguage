@@ -15,6 +15,7 @@ Note: the recommended file extension for a Zephyr file is `.zr`
 ### Installing a package
 
 At the moment, there are no official permanent repository servers, though if there is you can use the following:
+(Try the following server: https://zephyrrepository.itevie.repl.co)
 
 `zephyr install-package [package-name] [package-version] (--repository [url])`
 
