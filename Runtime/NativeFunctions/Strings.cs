@@ -69,7 +69,6 @@ namespace Zephyr.Runtime.NativeFunctions
 
                 return Helpers.CreateString(((StringValue)args[0]).Value.ToUpper());
             }, "toUpper"),
-
             fromCharCode = Helpers.CreateNativeFunction((args, env, expr) =>
             {
                 return Helpers.CreateString(((char)((IntegerValue)args[0]).Value).ToString());

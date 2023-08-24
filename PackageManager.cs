@@ -30,75 +30,19 @@ namespace Zephyr
             if (packageVersion == "@latest")
             {
                 // Fetch latest version
-                string u = $"{repository}package/{packageName}/latest/version";
-                Console.WriteLine($"Fetching package's latest version from {u}"); 
-                
-                HttpResponseMessage r;
+                string u = $"{repository}package/{packageName}/details";
+                Console.WriteLine($"Fetching package's latest version from {u}");
 
-                try
-                {
-                    // Try GET
-                    r = httpClient.GetAsync(u).GetAwaiter().GetResult();
-                    Console.WriteLine($"Recieved status code {r.StatusCode} ({(r.IsSuccessStatusCode ? "Success" : "Failure")})");
-                }
-                catch (HttpRequestException e)
-                {
-                    Console.WriteLine($"Fatal HTTP error: {e.Message}, try again later!".Pastel(ConsoleColor.Red));
-                    Environment.Exit(0);
-                    return;
-                }
-
-                // Check if successful
-                if (!r.IsSuccessStatusCode)
-                {
-                    // Get result
-                    string jsonRes = r.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-                    // Get message
-                    PackageManagerErrorResult? errRes = JsonConvert.DeserializeObject<PackageManagerErrorResult>(jsonRes);
-                    if (errRes == null) errRes.Message = "Unknown error";
-
-                    Console.WriteLine($"Error[{(int)r.StatusCode}] occurred whilst installing package: {errRes.Message}".Pastel(ConsoleColor.Red));
-                    Environment.Exit(0);
-                }
-
-                string returnedContent = r.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                string returnedContent = RepositoryHTTP.Get(u, "installing package");
+                ZephyrPackageInformation packageInfo = JsonConvert.DeserializeObject<ZephyrPackageInformation>(returnedContent);
 
                 // Success
-                Console.WriteLine($"Latest version is {returnedContent}");
-                packageVersion = returnedContent;
+                Console.WriteLine($"Latest version is {packageInfo.LatestVersion}");
+                packageVersion = packageInfo.LatestVersion;
             }
 
             string url = $"{repository}package/{packageName}/{packageVersion}/download";
-            Console.WriteLine($"GET {url}");
-
-            HttpResponseMessage res;
-
-            try
-            {
-                // Try GET
-                res = httpClient.GetAsync(url).GetAwaiter().GetResult();
-                Console.WriteLine($"Recieved status code {res.StatusCode} ({(res.IsSuccessStatusCode ? "Success" : "Failure")})");
-            } catch (HttpRequestException e)
-            {
-                Console.WriteLine($"Fatal HTTP error: {e.Message}, try again later!".Pastel(ConsoleColor.Red));
-                Environment.Exit(0);
-                return;
-            }
-
-            // Check if successful
-            if (!res.IsSuccessStatusCode)
-            {
-                // Get result
-                string jsonRes = res.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-                // Get message
-                PackageManagerErrorResult? errRes = JsonConvert.DeserializeObject<PackageManagerErrorResult>(jsonRes);
-                if (errRes == null) errRes.Message = "Unknown error";
-
-                Console.WriteLine($"Error[{(int)res.StatusCode}] occurred whilst installing package: {errRes.Message}".Pastel(ConsoleColor.Red));
-                Environment.Exit(0);
-            }
+            HttpResponseMessage packageData = RepositoryHTTP.Get(url, "installing package", true);
 
             string zephyrPackageFolder = Path.Combine(package.Location, "zephyr_packages");
             string packageFolder = Path.Combine(zephyrPackageFolder, packageName);
@@ -129,7 +73,7 @@ namespace Zephyr
             string packageZipFile = Path.Combine(packageTempFolder, "temp.zip");
             Console.WriteLine($"Saving downloaded ZIP to {packageZipFile}");
 
-            using (Stream stream = res.Content.ReadAsStream())
+            using (Stream stream = packageData.Content.ReadAsStream())
             {
                 using (Stream zip = File.OpenWrite(packageZipFile))
                 {
@@ -280,5 +224,17 @@ namespace Zephyr
     {
         public ZephyrPackage Package { get; set; } = new ZephyrPackage();
         public string Location { get; set; } = "";
+    }
+
+    internal class ZephyrPackageInformation
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; } = "";
+
+        [JsonProperty("author_id")]
+        public long AuthorID { get; set; } = 0;
+
+        [JsonProperty("latest_version")]
+        public string LatestVersion { get; set; } = "";
     }
 }

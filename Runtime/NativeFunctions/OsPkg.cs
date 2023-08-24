@@ -10,7 +10,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class Packages
     {
-        public static NonDefaultPackage OsPkg = new NonDefaultPackage("system", new
+        public static NonDefaultPackage OsPkg = new NonDefaultPackage("System", new
         {
             getOSName = Helpers.CreateNativeFunction((args, env, expr) =>
             {

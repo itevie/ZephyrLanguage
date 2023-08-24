@@ -2,6 +2,8 @@
 
 Zephyr is a general purpose, interpreted language written in C#.
 
+Using VSCode? Try the badly made VSCode syntax highlighting [VSCode Syntax Highlighter](https://github.com/itevie/zephyr-vscode-syntax-highlighting)
+
 ## CLI
 Zephyr has many CLI features built-in for running projects, creating new projects and an in-built package manager.
 

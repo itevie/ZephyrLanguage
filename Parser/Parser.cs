@@ -1072,6 +1072,9 @@ namespace Zephyr.Parser
                         Value = stringToken.Value,
                         Location = stringToken.Location,
                     };
+
+                case TokenType.Function:
+                    return ParseFunctionDeclaration();
                 case TokenType.OpenSquare:
                     Token openSquareToken = Eat();
                     List<Expression> arr = new List<Expression>();

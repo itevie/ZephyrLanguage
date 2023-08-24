@@ -10,7 +10,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package Timers = new Package("timers", new
+        public static Package Timers = new Package("Timers", new
         {
             start = Helpers.CreateNativeFunction((args, env, expr) =>
             {

@@ -13,7 +13,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package Threading = new Package("threading", new
+        public static Package Threading = new Package("Threading", new
         {
             sleep = Helpers.CreateNativeFunction((args, env, expr) =>
             {

@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
     internal partial class NativeFunctions
     {
 
-        public static Package RandomPkg = new Package("random", new
+        public static Package RandomPkg = new Package("Random", new
         {
             value = Helpers.CreateNativeFunction((args, env, expr) =>
             {
