@@ -1,6 +1,6 @@
 # Zephyr Language
 
-Zephyr is a general purpose, interpreted language written in C#.  
+Zephyr is a general purpose, optionally-typed, interpreted language written in C#.  
 
 Using VSCode? Try the badly made VSCode syntax highlighting [VSCode Syntax Highlighter](https://github.com/itevie/zephyr-vscode-syntax-highlighting)  
 

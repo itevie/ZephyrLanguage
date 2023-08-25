@@ -38,6 +38,29 @@ namespace Zephyr.Runtime.NativeFunctions
                 {
                     Name = "createClient"
                 }),
+
+                createServer = Helpers.CreateNativeFunction((args, env, expr) =>
+                {
+                    string url = ((StringValue)args[0]).Value;
+                    FunctionValue func = ((FunctionValue)args[1]);
+                    return HttpServerCreator(url, func, env);
+                }, options: new()
+                {
+                    Name = "createServer",
+                    Parameters =
+                    {
+                        new()
+                        {
+                            Name = "url",
+                            Type = Values.ValueType.String
+                        },
+                        new()
+                        {
+                            Name = "callback",
+                            Type = ValueType.Function
+                        }
+                    }
+                }),
             }
         });
 
@@ -66,6 +89,31 @@ namespace Zephyr.Runtime.NativeFunctions
                             Name = "headerValue",
                             Type = Values.ValueType.String
                         }
+                    }
+                }),
+
+                get = Helpers.CreateNativeFunction((args, env, expr) =>
+                {
+                    Uri url = new Uri(((StringValue)args[0]).Value);
+
+                    Debug.Log($"GETting {url}");
+                    HttpResponseMessage result = httpClient.GetAsync(url).GetAwaiter().GetResult();
+                    Debug.Log($"HTTP request to {url} returned {result.StatusCode} {result.Content.ReadAsStringAsync().GetAwaiter().GetResult()}");
+                    return Helpers.CreateObject(new
+                    {
+                        statusCode = (int)result.StatusCode,
+                        content = result.Content.ReadAsStringAsync().GetAwaiter().GetResult(),
+                    });
+                }, options: new()
+                {
+                    Name = "post",
+                    Parameters =
+                    {
+                        new()
+                        {
+                            Name = "url",
+                            Type = Values.ValueType.String
+                        },
                     }
                 }),
 

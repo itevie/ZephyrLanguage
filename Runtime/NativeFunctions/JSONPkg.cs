@@ -94,6 +94,22 @@ namespace Zephyr.Runtime.NativeFunctions
                     case Values.ValueType.Null:
                         stringVal += $"{name}:null";
                         break;
+                    case Values.ValueType.Array:
+                        stringVal += $"{name}: [";
+
+                        int idx = 0;
+                        foreach (RuntimeValue val in ((ArrayValue)kv.Value).Items)
+                        {
+                            stringVal += StringifyZephyrType(val);
+                            idx++;
+                            if (idx != ((ArrayValue)kv.Value).Items.Count)
+                            {
+                                stringVal += ",";
+                            }
+                        }
+
+                        stringVal += "]";
+                        break;
                 }
 
                 if (cidx != obj.Properties.Count)
@@ -105,6 +121,40 @@ namespace Zephyr.Runtime.NativeFunctions
             stringVal += "}";
 
             return stringVal;
+        }
+
+        public static string StringifyZephyrType(RuntimeValue value)
+        {
+            switch (value.Type)
+            {
+                case Values.ValueType.Int:
+                    return $"{((IntegerValue)value).Value}";
+                case Values.ValueType.String:
+                    return $"\"{((StringValue)value).Value}\"";
+                case Values.ValueType.Boolean:
+                    return $"{((BooleanValue)value).Value.ToString().ToLower()}";
+                case Values.ValueType.Object:
+                    return StringifyZephyrObject(((ObjectValue)value));
+                case Values.ValueType.Null:
+                    return "null";
+                case Values.ValueType.Array:
+                    string stringVal = $"[";
+
+                    int idx = 0;
+                    foreach (RuntimeValue val in ((ArrayValue)value).Items)
+                    {
+                        stringVal += StringifyZephyrType(val);
+                        idx++;
+                        if (idx != ((ArrayValue)value).Items.Count)
+                        {
+                            stringVal += ",";
+                        }
+                    }
+                    stringVal += "]";
+                    return stringVal;
+                default:
+                    return "\"?\"";
+            }
         }
 
         public static string SafifyString(string old)
