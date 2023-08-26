@@ -11,21 +11,17 @@ namespace Zephyr.Runtime.Handlers
     {
         public static bool EvaluateTruhyValueHelper(RuntimeValue value)
         {
-            switch (value.Type)
+            return value.Type switch
             {
-                case Values.ValueType.Int:
-                    return ((IntegerValue)value).Value > 0;
-                case Values.ValueType.Boolean:
-                    return ((BooleanValue)value).Value == true;
-                case Values.ValueType.String:
-                    return ((StringValue)value).Value != "";
-                case Values.ValueType.Null:
-                    return false;
-                case Values.ValueType.NativeFunction:
-                    return true;
-                default:
-                    throw new Exception($"Cannot evaluate truthy or falsy on type {value.Type}");
-            }
+                Values.ValueType.Int => ((IntegerValue)value).Value > 0,
+                Values.ValueType.Long => ((LongValue)value).Value > 0,
+                Values.ValueType.Float => ((FloatValue)value).Value > 0,
+                Values.ValueType.Boolean => ((BooleanValue)value).Value == true,
+                Values.ValueType.String => ((StringValue)value).Value != "",
+                Values.ValueType.Null => false,
+                Values.ValueType.NativeFunction => true,
+                _ => throw new Exception($"Cannot evaluate truthy or falsy on type {value.Type}"),
+            };
         }
     }
 }

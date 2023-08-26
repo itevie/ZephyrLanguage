@@ -8,7 +8,7 @@ namespace Zephyr.Parser.AST
 {
     internal class NumericLiteral : Expression
     {
-        public float Value { get; set; } = 0;
+        public double Value { get; set; } = 0;
         public bool IsFloat { get; set; } = false;
 
         public NumericLiteral()

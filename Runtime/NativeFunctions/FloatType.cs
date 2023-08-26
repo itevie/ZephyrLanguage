@@ -16,9 +16,9 @@ namespace Zephyr.Runtime.NativeFunctions
             parse = Helpers.CreateNativeFunction((args, env, expr) =>
             {
                 string text = ((StringValue)args[0]).Value;
-                float val = 0;
+                double val = 0;
 
-                if (float.TryParse(text, out val) == false)
+                if (double.TryParse(text, out val) == false)
                 {
                     throw new RuntimeException(new()
                     {

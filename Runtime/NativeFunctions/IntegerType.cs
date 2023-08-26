@@ -31,7 +31,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
             toFloat = Helpers.CreateNativeFunction((args, env, expr) =>
             {
-                return Helpers.CreateFloat((float)((IntegerValue)args[0]).Value);
+                return Helpers.CreateFloat((double)((IntegerValue)args[0]).Value);
             }, options: new()
             {
                 Name = "toFloat",

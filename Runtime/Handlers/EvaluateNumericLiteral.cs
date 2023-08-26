@@ -12,9 +12,13 @@ namespace Zephyr.Runtime.Handlers
     {
         public static Values.RuntimeValue EvaluateNumericLiteral(Parser.AST.NumericLiteral numericLiteral, Environment environment)
         {
-            RuntimeValue value = numericLiteral.IsFloat
-                ? Values.Helpers.Helpers.CreateFloat((float)numericLiteral.Value)
-                : Values.Helpers.Helpers.CreateInteger((int)numericLiteral.Value);
+            RuntimeValue value = !numericLiteral.IsFloat
+                ? (
+                    numericLiteral.Value <= int.MaxValue
+                        ? Values.Helpers.Helpers.CreateInteger((int)numericLiteral.Value)
+                        : Values.Helpers.Helpers.CreateLongValue((long)numericLiteral.Value)
+                )
+                : Values.Helpers.Helpers.CreateFloat((double)numericLiteral.Value);
 
             value.Location = numericLiteral.Location;
             return value;

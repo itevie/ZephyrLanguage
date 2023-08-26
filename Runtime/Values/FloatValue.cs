@@ -8,7 +8,7 @@ namespace Zephyr.Runtime.Values
 {
     internal class FloatValue : RuntimeValue
     {
-        public float Value = 0;
+        public double Value = 0;
 
         public FloatValue()
         {

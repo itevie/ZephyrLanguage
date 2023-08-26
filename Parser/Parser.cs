@@ -791,7 +791,7 @@ namespace Zephyr.Parser
                 // Get the righ hand side
                 AST.Expression right = At().TokenType == TokenType.UnaryOperator
                     ? ParseUnaryExpression()
-                    : ParseCallMemberExpression();
+                    : ParseMemberExpression();
 
                 // Done
                 return new UnaryExpression()
@@ -1042,7 +1042,7 @@ namespace Zephyr.Parser
                     Token numberToken = Eat();
                     return new AST.NumericLiteral()
                     {
-                        Value = float.Parse(numberToken.Value),
+                        Value = double.Parse(numberToken.Value),
                         Location = numberToken.Location,
                         IsFloat = numberToken.Value.Contains(".")
                     };
@@ -1054,7 +1054,7 @@ namespace Zephyr.Parser
 
                         return new AST.NumericLiteral()
                         {
-                            Value = -float.Parse(numTok.Value),
+                            Value = -double.Parse(numTok.Value),
                             Location = numTok.Location,
                             IsFloat = numTok.Value.Contains(".")
                         };

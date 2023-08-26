@@ -70,12 +70,20 @@ namespace Zephyr.Lexer.Syntax
         };
 
         // Logical operators
-        public static Dictionary<string, Operator> LogicalOperators = new()
+        /*public static Dictionary<string, Operator> LogicalOperators = new()
         {
             { "And", new Operator("&&", TokenType.LogicalOperator) },
             { "Or", new Operator("||", TokenType.LogicalOperator) },
             { "Not", new Operator("!", TokenType.UnaryOperator) },
             { "XOR", new Operator("|+|", TokenType.LogicalOperator) }
+        };*/
+
+        public static Dictionary<string, Operator> LogicalOperators = new()
+        {
+            { "And", new Operator("and", TokenType.LogicalOperator) },
+            { "Or", new Operator("or", TokenType.LogicalOperator) },
+            { "Not", new Operator("!", TokenType.UnaryOperator) },
+            { "XOR", new Operator("xor", TokenType.LogicalOperator) }
         };
 
         // Single ones
@@ -83,14 +91,15 @@ namespace Zephyr.Lexer.Syntax
         {
             { "QuestionMark", new Operator("?", TokenType.QuestionMark) },
             { "Colon", new Operator(":", TokenType.Colon) },
-            { "ForEachIn", new Operator("::", TokenType.ForEachIn) },
-            { "Cast", new Operator("->", TokenType.Cast) },
+            { "ForEachIn", new Operator("in", TokenType.ForEachIn) },
+            { "Cast", new Operator("as", TokenType.Cast) },
             { "DoubleDot", new Operator("..", TokenType.DoubleDot) },
             { "DoubleDotUninclusive", new Operator(".<", TokenType.DoubleDotUninclusive) },
             { "Dot", new Operator(".", TokenType.Dot) }
         };
 
         // List of all the above operators
+        public static Dictionary<string, Operator> LetterContainingOperators = new();
         public static Dictionary<string, Operator> AllOperators = GetAllOperators();
 
         private static Dictionary<string, Operator> GetAllOperators()
@@ -113,7 +122,11 @@ namespace Zephyr.Lexer.Syntax
             {
                 foreach (KeyValuePair<string, Operator> token in operatorList)
                 {
-                    tokens.Add(token.Key, token.Value);
+                    // Check if contains a letter
+                    if (token.Value.Symbol.Any(x => char.IsLetter(x)))
+                    {
+                        LetterContainingOperators.Add(token.Key, token.Value);
+                    } else tokens.Add(token.Key, token.Value);
                 }
             }
 

@@ -12,7 +12,7 @@ namespace Zephyr.Runtime.Handlers
     {
         public static RuntimeValue EvaluateCastExpression(CastExpression expression, Environment environment)
         {
-            return Helpers.CastValueHelper(Interpreter.Evaluate(expression.Left, environment), expression.Type, expression);
+            return Helpers.CastValueHelper(Interpreter.Evaluate(expression.Left, environment), expression.Type, Helpers.GetLocation(expression.Location, expression.FullExpressionLocation));
         }
     }
 }

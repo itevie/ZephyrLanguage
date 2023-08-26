@@ -206,45 +206,11 @@ namespace Zephyr.Runtime
                 }
             }), defaultSettings);
 
-            // Process
-            DeclareVariable("process", Values.Helpers.Helpers.CreateObject(new
-            {
-                iterationLimit = Helpers.CreateInteger(Program.Options.MaxLoopIterations),
-                noIterationLimit = Helpers.CreateBoolean(Program.Options.NoIterationLimit),
-                permissions = Helpers.CreateObject(new
-                {
-                    canSpawnProcesses = Helpers.CreateBoolean(Program.Options.CanSpawnProcesses),
-                    canAccessSystemDetails = Helpers.CreateBoolean(Program.Options.CanAccessSystemDetails),
-                    files = Helpers.CreateObject(new
-                    {
-                        canRead = Helpers.CreateBoolean(Program.Options.FileAccessFlags.Contains('r')),
-                        canWrite = Helpers.CreateBoolean(Program.Options.FileAccessFlags.Contains('w')),
-                        canDeleteFiles = Helpers.CreateBoolean(Program.Options.FileAccessFlags.Contains('d')),
-                        canDeleteDirectories = Helpers.CreateBoolean(Program.Options.FileAccessFlags.Contains('x')),
-                        canCreate = Helpers.CreateBoolean(Program.Options.FileAccessFlags.Contains('c')),
-                        none = Helpers.CreateBoolean(Program.Options.FileAccessFlags.Contains('n')),
-                    })
-                })
-            }), defaultSettings);
-
             // Declare default variables
             DeclareVariable("null", Values.Helpers.Helpers.CreateNull(), defaultSettings);
             DeclareVariable("true", Values.Helpers.Helpers.CreateBoolean(true), defaultSettings);
             DeclareVariable("false", Values.Helpers.Helpers.CreateBoolean(false), defaultSettings);
-            DeclareVariable("maybe", Helpers.CreateNativeFunction((args, env, expr) =>
-            {
-                Random random = new Random();
-                return Helpers.CreateBoolean(random.NextDouble() >= 0.5);
-            }), defaultSettings);
-            DeclareVariable("currentDirectory", Helpers.CreateNativeFunction((args, env, expr) =>
-            {
-                return Helpers.CreateString(env.Directory);
-            }), defaultSettings);
-            DeclareVariable("exit", Helpers.CreateNativeFunction((args, env, expr) =>
-            {
-                Program.Finish();
-                return Helpers.CreateNull();
-            }, options: new() { Name = "exit" }), defaultSettings);
+
             DeclareVariable("eval", Helpers.CreateNativeFunction((args, env, expr) =>
             {
                 Util.ExpectExact(args, new() { Values.ValueType.String });

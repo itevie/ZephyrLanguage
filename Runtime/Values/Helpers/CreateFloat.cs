@@ -8,7 +8,7 @@ namespace Zephyr.Runtime.Values.Helpers
 {
     internal partial class Helpers
     {
-        public static FloatValue CreateFloat(float value)
+        public static FloatValue CreateFloat(double value)
         {
             return new FloatValue()
             {

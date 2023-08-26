@@ -38,16 +38,18 @@ namespace Zephyr.Runtime.Handlers
                 return ((dynamic)left).Value != ((dynamic)right).Value;
             }
 
-            float leftValue;
+            double leftValue;
             if (left.Type == Values.ValueType.Int)
                 leftValue = ((IntegerValue)left).Value;
-            else if (right.Type == Values.ValueType.Float) leftValue = ((FloatValue)right).Value;
+            else if (right.Type == Values.ValueType.Float) leftValue = ((FloatValue)left).Value;
+            else if (right.Type == Values.ValueType.Long) leftValue = ((LongValue)left).Value;
             else throw new Exception("insert error here");
 
-            float rightValue;
+            double rightValue;
             if (right.Type == Values.ValueType.Int)
                 rightValue = ((IntegerValue)right).Value;
             else if (right.Type == Values.ValueType.Float) rightValue = ((FloatValue)right).Value;
+            else if (right.Type == Values.ValueType.Long) rightValue = ((LongValue)right).Value;
             else throw new Exception("insert error here");
 
             // Only numbers

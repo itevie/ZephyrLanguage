@@ -31,6 +31,9 @@ namespace Zephyr.Lexer
 
         public static List<Token> Tokenize(string sourceCode, string fileName = "")
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+
             List<Token> tokens = new();
             char[] src = sourceCode.ToCharArray();
 
@@ -232,8 +235,15 @@ namespace Zephyr.Lexer
                             identifier += removeFirst();
                         }
 
+                        // Check for operator keywords
+                        if (Operators.LetterContainingOperators.Any(x => x.Value.Symbol == identifier))
+                        {
+                            KeyValuePair<string, Operator> op = Operators.LetterContainingOperators.First(x => x.Value.Symbol == identifier);
+                            setToken(identifier, op.Value.TokenType);
+                        }
+
                         // Check if it is a keyword
-                        if (_keywords.ContainsKey(identifier))
+                        else if (_keywords.ContainsKey(identifier))
                         {
                             setToken(identifier, _keywords.GetValueOrDefault(identifier));
                         }
@@ -299,6 +309,9 @@ namespace Zephyr.Lexer
                 Line = currentLine,
                 FileName = fileName
             }));
+
+            stopwatch.Stop();
+            Debug.Log($"Lexer took {stopwatch.ElapsedMilliseconds}ms");
 
             return tokens;
         }
