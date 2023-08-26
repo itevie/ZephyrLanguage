@@ -21,7 +21,7 @@ namespace Zephyr.Runtime.Handlers
                 Verbose.Log("Executing Zephyr function " + function.Name);
 
                 // Create scope
-                Environment scope = new Environment(function.DeclarationEnvironment);
+                Environment scope = new(function.DeclarationEnvironment);
                 scope.DeclareVariable("~return", Values.Helpers.Helpers.CreateNull(), new VariableSettings());
 
                 // Create the argument variables

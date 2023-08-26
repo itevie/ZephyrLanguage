@@ -8,7 +8,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package NetPkg = new Package("Net", new
+        public static Package NetPkg = new("Net", new
         {
             ws = Helpers.CreateObject(new
             {
@@ -66,7 +66,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
         public static ObjectValue CreateHTTPObject(Environment environment)
         {
-            HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new();
 
             return Helpers.CreateObject(new
             {
@@ -94,7 +94,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
                 get = Helpers.CreateNativeFunction((args, env, expr) =>
                 {
-                    Uri url = new Uri(((StringValue)args[0]).Value);
+                    Uri url = new(((StringValue)args[0]).Value);
 
                     Debug.Log($"GETting {url}");
                     HttpResponseMessage result = httpClient.GetAsync(url).GetAwaiter().GetResult();
@@ -119,8 +119,8 @@ namespace Zephyr.Runtime.NativeFunctions
 
                 post = Helpers.CreateNativeFunction((args, env, expr) =>
                 {
-                    Uri url = new Uri(((StringValue)args[0]).Value);
-                    string data = new string(((StringValue)args[1]).Value.Where(c => !char.IsControl(c)).ToArray());
+                    Uri url = new(((StringValue)args[0]).Value);
+                    string data = new(((StringValue)args[1]).Value.Where(c => !char.IsControl(c)).ToArray());
                     string mediaType = ((StringValue)args[2]).Value;
                     Debug.Log($"Sending {data} to {url}");
                     HttpResponseMessage result = httpClient.PostAsync(url, new StringContent(data, System.Text.Encoding.UTF8, mediaType)).GetAwaiter().GetResult();
@@ -157,12 +157,12 @@ namespace Zephyr.Runtime.NativeFunctions
 
         public static ObjectValue CreateWSObject(Uri uri, Environment environment)
         {
-            ManualResetEvent exitEvent = new ManualResetEvent(false);
-            WebsocketClient client = new WebsocketClient(uri);
+            ManualResetEvent exitEvent = new(false);
+            WebsocketClient client = new(uri);
 
-            List<FunctionValue> messageEventCallbacks = new List<FunctionValue>();
-            List<FunctionValue> disconnectionEventCallbacks = new List<FunctionValue>();
-            List<FunctionValue> errorEventCallbacks = new List<FunctionValue>();
+            List<FunctionValue> messageEventCallbacks = new();
+            List<FunctionValue> disconnectionEventCallbacks = new();
+            List<FunctionValue> errorEventCallbacks = new();
 
             Action<string> throwError = (string message) =>
             {

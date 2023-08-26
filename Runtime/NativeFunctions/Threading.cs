@@ -13,7 +13,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package Threading = new Package("Threading", new
+        public static Package Threading = new("Threading", new
         {
             sleep = Helpers.CreateNativeFunction((args, env, expr) =>
             {
@@ -58,9 +58,9 @@ namespace Zephyr.Runtime.NativeFunctions
 
                 waitAll = Helpers.CreateNativeFunction((args, env, expr) =>
                 {
-                    List<Task> tasks = new List<Task>();
-                    Dictionary<int, RuntimeValue> returns = new Dictionary<int, RuntimeValue>();
-                    List<Exception> errors = new List<Exception>();
+                    List<Task> tasks = new();
+                    Dictionary<int, RuntimeValue> returns = new();
+                    List<Exception> errors = new();
 
                     string type = $"threading.threads.waitAll - {Guid.NewGuid()}";
 
@@ -106,7 +106,7 @@ namespace Zephyr.Runtime.NativeFunctions
                     // Wait for tasks
                     Task.WaitAll(tasks.ToArray());
 
-                    List<RuntimeValue> values = new List<RuntimeValue>();
+                    List<RuntimeValue> values = new();
 
                     Debug.Log($"Combining thread's returned values ({returns.Count})", type);
 
@@ -150,7 +150,7 @@ namespace Zephyr.Runtime.NativeFunctions
                         }
                     };
 
-                    Thread thread = new Thread(new ThreadStart(f));
+                    Thread thread = new(new ThreadStart(f));
                     thread.Start();
 
                     return Helpers.CreateNull();

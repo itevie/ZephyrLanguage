@@ -7,7 +7,7 @@ namespace Zephyr.Runner
 {
     internal class Repl
     {
-        Runtime.Environment environment = new Runtime.Environment();
+        Runtime.Environment environment = new();
 
         public void Start()
         {

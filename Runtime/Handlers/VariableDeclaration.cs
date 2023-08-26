@@ -16,6 +16,11 @@ namespace Zephyr.Runtime.Handlers
                 ? Interpreter.Evaluate(declaration.Value, environment)
                 : Values.Helpers.Helpers.CreateNull();
 
+            if (declaration.Type == Values.ValueType.Auto)
+            {
+                declaration.Type = value.Type;
+            }
+
             // Cast for numbers
             if (value.Type == Values.ValueType.Int || value.Type == Values.ValueType.Long || value.Type == Values.ValueType.Float)
                 value = Helpers.CastValueHelper(value, declaration.Type, Helpers.GetLocation(declaration.Value.Location));

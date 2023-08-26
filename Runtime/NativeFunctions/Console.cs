@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package ConsoleUsage = new Package("console", new
+        public static Package ConsoleUsage = new("console", new
         {
             clear = Helpers.CreateNativeFunction((args, environment, expr) =>
             {

@@ -30,12 +30,12 @@ namespace Zephyr.Lexer.Syntax
             { "int", Runtime.Values.ValueType.Int },
             { "long", Runtime.Values.ValueType.Long },
             { "float", Runtime.Values.ValueType.Float },
-            { "double", Runtime.Values.ValueType.Double },
+            //{ "double", Runtime.Values.ValueType.Double },
             { "string", Runtime.Values.ValueType.String },
             { "any", Runtime.Values.ValueType.Any },
-            { "auto", Runtime.Values.ValueType.Any },
+            { "auto", Runtime.Values.ValueType.Auto },
             { "bool", Runtime.Values.ValueType.Boolean },
-            { "function", Runtime.Values.ValueType.Function },
+            { "func", Runtime.Values.ValueType.Function },
             { "object", Runtime.Values.ValueType.Object },
         };
 

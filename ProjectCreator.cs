@@ -38,7 +38,7 @@ namespace Zephyr
             Directory.CreateDirectory(Path.Combine(dir, "src"));
             Directory.CreateDirectory(Path.Combine(dir, "zephyr_packages"));
 
-            ZephyrPackage package = new ZephyrPackage();
+            ZephyrPackage package = new();
             package.Name = projectName;
             package.Dependencies.Add("is_null", new()
             {

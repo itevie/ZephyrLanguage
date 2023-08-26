@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package FloatTypePkg = new Package("Float", new
+        public static Package FloatTypePkg = new("Float", new
         {
             parse = Helpers.CreateNativeFunction((args, env, expr) =>
             {

@@ -12,7 +12,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package EnvironmentEvalPkg = new Package("Evaluator", new
+        public static Package EnvironmentEvalPkg = new("Evaluator", new
         {
             createEnvironment = Helpers.CreateNativeFunction((args, env, expr) =>
             {
@@ -25,7 +25,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
         public static ObjectValue EnvironmentEvalCreater()
         {
-            Environment environment = new Environment(Runner.FileExecutor.GlobalEnvironment);
+            Environment environment = new(Runner.FileExecutor.GlobalEnvironment);
 
             return Helpers.CreateObject(new
             {

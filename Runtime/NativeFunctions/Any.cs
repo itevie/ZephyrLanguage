@@ -10,7 +10,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package AnyType = new Package("Any", new
+        public static Package AnyType = new("Any", new
         {
             length = Helpers.CreateNativeFunction((args, env, expr) =>
             {

@@ -16,15 +16,24 @@ namespace Zephyr.Runtime.Handlers
             RuntimeValue left = Interpreter.Evaluate(expr.Left, env);
             RuntimeValue right = Interpreter.Evaluate(expr.Right, env);
 
+            bool leftTruthy = Helpers.EvaluateTruhyValueHelper(left);
+            bool rightTruthy = Helpers.EvaluateTruhyValueHelper(right);
+
             if (expr.Operator == Operators.LogicalOperators["And"].Symbol)
             {
-                if (Helpers.EvaluateTruhyValueHelper(left) && Helpers.EvaluateTruhyValueHelper(right))
+                if (leftTruthy && rightTruthy)
                 {
                     return Values.Helpers.Helpers.CreateBoolean(true);
                 }
             } else if (expr.Operator == Operators.LogicalOperators["Or"].Symbol)
             {
-                if (Helpers.EvaluateTruhyValueHelper(left) || Helpers.EvaluateTruhyValueHelper(right))
+                if (leftTruthy || rightTruthy)
+                {
+                    return Values.Helpers.Helpers.CreateBoolean(true);
+                }
+            } else if (expr.Operator == Operators.LogicalOperators["XOR"].Symbol)
+            {
+                if ((leftTruthy || rightTruthy) && !(leftTruthy && rightTruthy))
                 {
                     return Values.Helpers.Helpers.CreateBoolean(true);
                 }

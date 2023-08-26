@@ -17,14 +17,14 @@ namespace Zephyr
 
         public static void InstallPackage(string packageName, string packageVersion, Uri repository)
         {
-            Stopwatch stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new();
             stopwatch.Start();
 
             Console.WriteLine($"Downloading package {packageName}@{packageVersion} from {repository}");
             ZephyrPackageWithLocation package = GetZephyrPackage();
 
             // Create client
-            HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new();
 
             // Check if latest
             if (packageVersion == "@latest")

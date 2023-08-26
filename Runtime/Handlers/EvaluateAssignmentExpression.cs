@@ -41,7 +41,7 @@ namespace Zephyr.Runtime.Handlers
             RuntimeValue oldValue = environment.LookupVariable(variableName, node.Assignee);
 
             // Check the type
-            if (node.Type == Operators.AssignmentOperators["NullishAssignment"].Symbol)
+            if (node.Type == Operators.AssignmentOperators["CoalesenceAssignment"].Symbol)
             {
                 if (oldValue.Type == Values.ValueType.Null)
                 {

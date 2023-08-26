@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.Handlers
 {
     internal partial class Expressions
     {
-        private static List<string> _simpleOperators = new List<string>()
+        private static List<string> _simpleOperators = new()
         {
             Operators.ComparisonOperators["Equals"].Symbol,
             Operators.ComparisonOperators["NotEquals"].Symbol,

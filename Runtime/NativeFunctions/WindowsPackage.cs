@@ -26,7 +26,7 @@ namespace Zephyr.Runtime.NativeFunctions
         [DllImport("user32.dll")]
         internal static extern bool SetClipboardData(uint uFormat, IntPtr data);
 
-        public static NonDefaultPackage WinformsPackage = new NonDefaultPackage("Windows", new
+        public static NonDefaultPackage WinformsPackage = new("Windows", new
         {
             messageBox = new
             {
@@ -70,7 +70,7 @@ namespace Zephyr.Runtime.NativeFunctions
                     int icon = (int)(((IntegerValue?)iconVal ?? null)?.Value ?? 0);
                     int buttons = (int)(((IntegerValue?)buttonsVal ?? null)?.Value ?? 0);
 
-                    int result = MessageBox((IntPtr)0, body == null ? "" : body, title == null ? "" : title, icon + buttons);
+                    int result = MessageBox((IntPtr)0, body ?? "", title ?? "", icon + buttons);
                     return Helpers.CreateInteger(result);
                 }),
 

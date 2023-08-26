@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.Values.Helpers
         // TODO Don't use dynamic here
         public static RuntimeValue CastNonFloatNumberValues(RuntimeValue value, ValueType newValue)
         {
-            RuntimeValue val = new RuntimeValue();
+            RuntimeValue val = new();
             if (newValue is ValueType.Int)
             {
                 val = CreateInteger((int)((dynamic)value).Value);

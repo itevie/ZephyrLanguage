@@ -9,7 +9,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package MathPkg = new Package("Math", new
+        public static Package MathPkg = new("Math", new
         {
             abs = Helpers.CreateNativeFunction((args, env, expr) =>
             {

@@ -29,7 +29,7 @@ namespace Zephyr.Runtime.Handlers
             // Numbers only
             Values.ValueType[] values = { Values.ValueType.Int, Values.ValueType.Long, Values.ValueType.Float };
 
-            if (values.Contains(left.Type) && values.Contains(right.Type))
+            if (values.Contains(left.Type) && values.Contains(right.Type) && Lexer.Syntax.Operators.ArithmeticOperators.Any(x => x.Value.Symbol == op))
             {
                 double leftValue = 0;
                 double rightValue = 0;
@@ -158,6 +158,15 @@ namespace Zephyr.Runtime.Handlers
                 {
 
                 }
+            }
+
+            else if (op == Lexer.Syntax.Operators.BinaryOperators["Coalesence"].Symbol)
+            {
+                if (left.Type == Values.ValueType.Null)
+                {
+                    return right;
+                }
+                else return left;
             }
 
             throw generateError($"Cannot handle {left.Type} {op} {right.Type}");

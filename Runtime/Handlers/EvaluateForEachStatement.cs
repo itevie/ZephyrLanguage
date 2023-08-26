@@ -20,7 +20,7 @@ namespace Zephyr.Runtime.Handlers
 
             foreach (RuntimeValue runtimeValue in enumerableValue.Values)
             {
-                Environment scope = new Environment(environment);
+                Environment scope = new(environment);
                 scope.DeclareVariable(identifier, runtimeValue, new VariableSettings()
                 {
                     IsConstant = true

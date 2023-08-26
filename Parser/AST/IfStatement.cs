@@ -8,8 +8,8 @@ namespace Zephyr.Parser.AST
 {
     internal class IfStatement : Expression
     {
-        public Expression Test = new Expression();
-        public Expression Success = new Expression();
+        public Expression Test = new();
+        public Expression Success = new();
         public Expression? Alternate = null;
 
         public IfStatement()

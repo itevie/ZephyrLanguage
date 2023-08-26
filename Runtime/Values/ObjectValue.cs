@@ -10,7 +10,7 @@ namespace Zephyr.Runtime.Values
 {
     internal class ObjectValue : RuntimeValue
     {
-        public Dictionary<string, RuntimeValue> Properties = new Dictionary<string, RuntimeValue>();
+        public Dictionary<string, RuntimeValue> Properties = new();
 
         public void AddProperty(string key, RuntimeValue value, Location loc)
         {

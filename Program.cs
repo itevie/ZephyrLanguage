@@ -85,7 +85,7 @@ namespace Zephyr
                                // If filename is null, run REPL
                                Console.WriteLine($"Running in REPL mode");
 
-                               Repl repl = new Repl();
+                               Repl repl = new();
                                repl.Start();
                            }
                            else
@@ -96,7 +96,7 @@ namespace Zephyr
                                {
                                    if (Options.MaxRuntime != null)
                                    {
-                                       Thread thread = new Thread(new ThreadStart(new Action(() =>
+                                       Thread thread = new(new ThreadStart(new Action(() =>
                                        {
                                            Thread.Sleep((int)Options.MaxRuntime * 1000);
 

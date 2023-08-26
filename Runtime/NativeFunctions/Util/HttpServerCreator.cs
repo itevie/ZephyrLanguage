@@ -15,7 +15,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
         public static ObjectValue HttpServerCreator(string url, FunctionValue func, Environment env)
         {
-            HttpListener listener = new HttpListener();
+            HttpListener listener = new();
             listener.Prefixes.Add(url);
 
             return Helpers.CreateObject(new

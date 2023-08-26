@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package Strings = new Package("strings", new
+        public static Package Strings = new("strings", new
         {
             split = Helpers.CreateNativeFunction((args, env, expr) =>
             {
@@ -22,7 +22,7 @@ namespace Zephyr.Runtime.NativeFunctions
                 string[] arr = l.Split(new string[] { r }, StringSplitOptions.None);
                 if (r == "") arr = l.ToCharArray().Select(c => c.ToString()).ToArray();
 
-                List<RuntimeValue> runtimeValues = new List<RuntimeValue>();
+                List<RuntimeValue> runtimeValues = new();
 
                 for (int i = 0; i < arr.Length; i++)
                 {

@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package ObjectType = new Package("Object", new
+        public static Package ObjectType = new("Object", new
         {
             addProperty = Helpers.CreateNativeFunction((args, env, expr) =>
             {

@@ -14,7 +14,7 @@ namespace Zephyr.Runtime.Handlers
         public static RuntimeValue EvaluateCallExpression(Parser.AST.CallExpression expression, Environment environment)
         {
             // Get the values
-            List<RuntimeValue> arguments = new List<RuntimeValue>();
+            List<RuntimeValue> arguments = new();
             RuntimeValue function = Interpreter.Evaluate(expression.Caller, environment);
 
             // Load arguments

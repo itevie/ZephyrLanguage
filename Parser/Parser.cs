@@ -14,7 +14,7 @@ namespace Zephyr.Parser
 {
     internal class Parser
     {
-        private List<Token> tokens = new List<Token>();
+        private List<Token> tokens = new();
 
         private bool NotEOF()
         {
@@ -63,7 +63,7 @@ namespace Zephyr.Parser
         {
             tokens = Lexer.Lexer.Tokenize(sourceCode, fileName);
 
-            AST.Program program = new AST.Program();
+            AST.Program program = new();
 
             // Parse until end of file
             while (NotEOF())
@@ -399,7 +399,7 @@ namespace Zephyr.Parser
         {
             Token tryToken = Eat();
 
-            Expression body = new Expression();
+            Expression body = new();
 
             // Get the body
             if (At().TokenType == TokenType.OpenBrace)
@@ -463,7 +463,7 @@ namespace Zephyr.Parser
             }
 
             List<Expression> arguments = ParseArguments();
-            List<Expression> parameters = new List<Expression>();
+            List<Expression> parameters = new();
 
             foreach (Expression arg in arguments)
             {
@@ -494,7 +494,7 @@ namespace Zephyr.Parser
         private Expression ParseBlock()
         {
             Expect(TokenType.OpenBrace, "Expected opening of body");
-            List<Expression> body = new List<Expression>();
+            List<Expression> body = new();
 
             while (At().TokenType != TokenType.CloseBrace && At().TokenType != TokenType.EOF)
             {
@@ -536,7 +536,7 @@ namespace Zephyr.Parser
             // Expect identifier now
             identifier = Expect(TokenType.Identifier, "Expected ifentifier");
 
-            Identifier ident = new Identifier()
+            Identifier ident = new()
             {
                 Location = identifier.Location,
                 Symbol = identifier.Value,
@@ -700,7 +700,8 @@ namespace Zephyr.Parser
                 At().Value == Operators.ArithmeticOperators["Multiply"].Symbol ||
                 At().Value == Operators.ArithmeticOperators["Divide"].Symbol ||
                 At().Value == Operators.ArithmeticOperators["Modulus"].Symbol ||
-                At().Value == Operators.ArithmeticOperators["Power"].Symbol
+                At().Value == Operators.ArithmeticOperators["Power"].Symbol ||
+                At().Value == Operators.BinaryOperators["Coalesence"].Symbol
             )
             {
                 Token operatorToken = Eat();
@@ -749,7 +750,7 @@ namespace Zephyr.Parser
                 bool uninclusive = At().TokenType == TokenType.DoubleDotUninclusive;
                 Eat();
 
-                Expression right = new Expression();
+                Expression right = new();
                 Expression? middle = null;
 
                 Expression temp = ParseUnaryExpression();
@@ -919,7 +920,7 @@ namespace Zephyr.Parser
 
         private AST.Expression ParseCallExpression(AST.Expression caller)
         {
-            AST.CallExpression callExpression = new CallExpression()
+            AST.CallExpression callExpression = new()
             {
                 Caller = caller,
                 Arguments = ParseArguments(),
@@ -951,7 +952,7 @@ namespace Zephyr.Parser
 
         private List<AST.Expression> ParseArgumentsList()
         {
-            List<AST.Expression> args = new List<AST.Expression>()
+            List<AST.Expression> args = new()
             {
                 ParseExpression()
             };
@@ -1077,7 +1078,7 @@ namespace Zephyr.Parser
                     return ParseFunctionDeclaration();
                 case TokenType.OpenSquare:
                     Token openSquareToken = Eat();
-                    List<Expression> arr = new List<Expression>();
+                    List<Expression> arr = new();
 
                     while (At().TokenType != TokenType.CloseSquare && At().TokenType != TokenType.EOF)
                     {

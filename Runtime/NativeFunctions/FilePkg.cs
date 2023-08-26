@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package FilePkg = new Package("Files", new
+        public static Package FilePkg = new("Files", new
         {
             readAllText = Helpers.CreateNativeFunction((args, env, expr) =>
             {

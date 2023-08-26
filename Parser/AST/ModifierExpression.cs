@@ -9,7 +9,7 @@ namespace Zephyr.Parser.AST
     internal class ModifierExpression : Expression
     {
         public Runtime.Values.Modifier? Modifier = null;
-        public Expression ToModify = new Expression();
+        public Expression ToModify = new();
 
         public ModifierExpression()
         {

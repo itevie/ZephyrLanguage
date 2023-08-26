@@ -15,7 +15,7 @@ namespace Zephyr.Runtime.Handlers
             RuntimeValue result = Values.Helpers.Helpers.CreateNull();
 
             // Create scope
-            Environment scope = new Environment(environment);
+            Environment scope = new(environment);
             
             foreach (Expression statement in block.Body)
             {

@@ -13,7 +13,7 @@ namespace Zephyr.Runtime.NativeFunctions
     {
         public static void HandleThread(Action action)
         {
-            Action ac = new Action(() =>
+            Action ac = new(() =>
             {
                 try
                 {
@@ -25,7 +25,7 @@ namespace Zephyr.Runtime.NativeFunctions
                 }
             });
 
-            Thread thread = new Thread(new ThreadStart(ac));
+            Thread thread = new(new ThreadStart(ac));
             thread.Start();
         }
     }

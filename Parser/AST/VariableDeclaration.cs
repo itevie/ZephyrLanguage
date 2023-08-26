@@ -10,7 +10,7 @@ namespace Zephyr.Parser.AST
     internal class VariableDeclaration : Expression
     {
         public bool IsConstant = false;
-        public Identifier Identifier = new Identifier();
+        public Identifier Identifier = new();
         public Expression? Value = null;
 
         // Type stuff

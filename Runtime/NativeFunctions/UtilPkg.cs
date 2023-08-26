@@ -10,7 +10,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package UtilPkg = new Package("util", new
+        public static Package UtilPkg = new("util", new
         {
             isTruthy = Helpers.CreateNativeFunction((args, env, expr) =>
             {

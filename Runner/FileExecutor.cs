@@ -13,7 +13,7 @@ namespace Zephyr.Runner
 {
     internal class FileExecutor
     {
-        public static Runtime.Environment GlobalEnvironment = new Runtime.Environment();
+        public static Runtime.Environment GlobalEnvironment = new();
 
         public static void Execute(string fileName)
         {
@@ -26,7 +26,7 @@ namespace Zephyr.Runner
             string sourceCode = File.ReadAllText(fileName);
 
             // Generate env
-            Runtime.Environment env = new Runtime.Environment(GlobalEnvironment);
+            Runtime.Environment env = new(GlobalEnvironment);
             env.Directory = Program.EntryPoint;
 
             try

@@ -13,7 +13,7 @@ namespace Zephyr.Runtime.Handlers
     {
         public static Values.RuntimeValue EvaluateObjectLiteral(Parser.AST.ObjectLiteral o, Environment environment)
         {
-            ObjectValue obj = new ObjectValue();
+            ObjectValue obj = new();
             obj.Location = o.Location;
             
             foreach (Property prop in o.Properties)

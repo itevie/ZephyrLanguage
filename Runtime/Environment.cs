@@ -121,6 +121,12 @@ namespace Zephyr.Runtime
 
             CheckType(value, variable.Options, from);
 
+            // Check for number cast
+            if (Helpers.IsNumberValue(value.Type))
+            {
+                value = Handlers.Helpers.CastValueHelper(value, variable.Options.Type);
+            }
+
             // Assign
             environment._variables[variableName].Value = value;
 
@@ -161,7 +167,7 @@ namespace Zephyr.Runtime
         {
             Debug.Log($"Loading global variables", $"global environment");
 
-            VariableSettings defaultSettings = new VariableSettings()
+            VariableSettings defaultSettings = new()
             {
                 IsConstant = true,
                 Modifiers = new()
@@ -218,7 +224,7 @@ namespace Zephyr.Runtime
                 try
                 {
                     // Generate env
-                    Runtime.Environment environment = new Runtime.Environment(Runner.FileExecutor.GlobalEnvironment);
+                    Runtime.Environment environment = new(Runner.FileExecutor.GlobalEnvironment);
                     // Produce AST and execute
                     Parser.AST.Program program = new Parser.Parser().ProduceAST(((StringValue)args[0]).Value, "eval");
                     RuntimeValue value = Interpreter.Evaluate(program, env);

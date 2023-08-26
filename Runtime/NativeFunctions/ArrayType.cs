@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package ArrayTypePkg = new Package("Array", new
+        public static Package ArrayTypePkg = new("Array", new
         {
             add = Helpers.CreateNativeFunction((args, env, expr) =>
             {
@@ -184,7 +184,7 @@ namespace Zephyr.Runtime.NativeFunctions
             {
                 Util.ExpectExact(args, new() { Values.ValueType.Array, Values.ValueType.Function }, expr);
 
-                List<RuntimeValue> newArray = new List<RuntimeValue>();
+                List<RuntimeValue> newArray = new();
                 List<RuntimeValue> oldArray = ((ArrayValue)args[0]).Items;
                 FunctionValue function = (FunctionValue)args[1];
 

@@ -14,7 +14,7 @@ namespace Zephyr.Lexer
         private static Dictionary<string, Operator> _operators = Operators.AllOperators;
         private static Dictionary<string, TokenType> _keywords = Keywords.TheKeywords;
 
-        private static Dictionary<string, string> _escapeCharacters = new Dictionary<string, string>()
+        private static Dictionary<string, string> _escapeCharacters = new()
         {
             { "n", "\n" }
         };
@@ -31,7 +31,7 @@ namespace Zephyr.Lexer
 
         public static List<Token> Tokenize(string sourceCode, string fileName = "")
         {
-            Stopwatch stopwatch = new Stopwatch();
+            Stopwatch stopwatch = new();
             stopwatch.Start();
 
             List<Token> tokens = new();
@@ -44,7 +44,7 @@ namespace Zephyr.Lexer
             {
                 string tokenValue = "";
                 TokenType? tokenType = null;
-                Location location = new Location()
+                Location location = new()
                 {
                     TokenStart = lineIdx,
                     Source = sourceCode,

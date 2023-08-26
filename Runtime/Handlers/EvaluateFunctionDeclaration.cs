@@ -12,7 +12,7 @@ namespace Zephyr.Runtime.Handlers
     {
         public static Values.RuntimeValue EvaluateFunctionDeclaration(Parser.AST.FunctionDeclaration declaration, Environment environment)
         {
-            List<string> parameters = new List<string>();
+            List<string> parameters = new();
 
             foreach (Expression parameter in declaration.Parameters)
             {
@@ -29,7 +29,7 @@ namespace Zephyr.Runtime.Handlers
                 parameters.Add(((Identifier)parameter).Symbol);
             }
 
-            Values.FunctionValue func = new Values.FunctionValue(environment)
+            Values.FunctionValue func = new(environment)
             {
                 Name = declaration.Name != null ? ((Identifier)declaration.Name).Symbol : $"~Anonymous::{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}{Guid.NewGuid()}",
                 Parameters = parameters,

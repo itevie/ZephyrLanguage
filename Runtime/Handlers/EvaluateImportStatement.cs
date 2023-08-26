@@ -106,7 +106,7 @@ namespace Zephyr.Runtime.Handlers
 
                     declareAs = ((Identifier)statement.ImportAs).Symbol;
 
-                    Environment fileScope = new Environment(Runner.FileExecutor.GlobalEnvironment);
+                    Environment fileScope = new(Runner.FileExecutor.GlobalEnvironment);
                     Debug.Log($"Importing with directory {new FileInfo(toImport).Directory.FullName} ({toImport})");
                     fileScope.Directory = new FileInfo(toImport).Directory.FullName;
 

@@ -8,7 +8,7 @@ namespace Zephyr.Parser.AST
 {
     internal class UnaryExpression : Expression
     {
-        public AST.Expression Right = new AST.Expression();
+        public AST.Expression Right = new();
         public string Operator = "";
 
         public UnaryExpression()

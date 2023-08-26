@@ -9,7 +9,7 @@ namespace Zephyr.Parser.AST
     internal class CallExpression : Expression
     {
         public List<Expression> Arguments = new();
-        public Expression Caller = new Expression();
+        public Expression Caller = new();
 
         public CallExpression()
         {

@@ -22,8 +22,16 @@ namespace Zephyr.Runtime.NativeFunctions
                     if (noColors) return ((IntegerValue)value).Value.ToString();
                     return ((IntegerValue)value).Value.ToString().Pastel(ConsoleColor.Magenta);
                 case Values.ValueType.Float:
-                    if (noColors) return ((FloatValue)value).Value.ToString();
-                    return ((FloatValue)value).Value.ToString().Pastel(ConsoleColor.Magenta);
+                    string returning = ((FloatValue)value).Value.ToString();
+
+                    // Check if should add .0
+                    if (((FloatValue)value).Value % 1 == 0)
+                    {
+                        returning += ".0";
+                    }
+
+                    if (noColors) return returning.ToString();
+                    return returning.Pastel(ConsoleColor.Magenta);
                 case Values.ValueType.Double:
                     if (noColors) return ((DoubleValue)value).Value.ToString();
                     return ((DoubleValue)value).Value.ToString().Pastel(ConsoleColor.Magenta);

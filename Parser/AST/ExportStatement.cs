@@ -8,8 +8,8 @@ namespace Zephyr.Parser.AST
 {
     internal class ExportStatement : Expression
     {
-        public Expression ToExport = new Expression();
-        public Expression ExportAs = new Expression();
+        public Expression ToExport = new();
+        public Expression ExportAs = new();
 
         public ExportStatement()
         {

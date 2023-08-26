@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.Values.Helpers
     {
         public static EnumerableValue CreateEnumerableValue(RuntimeValue toConvert)
         {
-            EnumerableValue value = new EnumerableValue();
+            EnumerableValue value = new();
 
             switch (toConvert.Type)
             {

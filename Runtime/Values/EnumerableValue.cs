@@ -8,7 +8,7 @@ namespace Zephyr.Runtime.Values
 {
     internal class EnumerableValue : RuntimeValue
     {
-        public List<RuntimeValue> Values = new List<RuntimeValue>();
+        public List<RuntimeValue> Values = new();
 
         public EnumerableValue()
         {

@@ -70,7 +70,7 @@ namespace Zephyr.Runtime.Handlers
                 });
             }
 
-            List<int> range = new List<int>();
+            List<int> range = new();
 
             for (int i = start; i < end + (expression.Uninclusive ? 0 : 1); i += step)
             {
@@ -78,7 +78,7 @@ namespace Zephyr.Runtime.Handlers
             }
 
             // Turn into enumerable
-            List<RuntimeValue> values = new List<RuntimeValue>(range.Select(x => Values.Helpers.Helpers.CreateInteger(x)));
+            List<RuntimeValue> values = new(range.Select(x => Values.Helpers.Helpers.CreateInteger(x)));
 
             return new EnumerableValue()
             {

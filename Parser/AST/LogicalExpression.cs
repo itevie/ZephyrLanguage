@@ -8,8 +8,8 @@ namespace Zephyr.Parser.AST
 {
     internal class LogicalExpression : Expression
     {
-        public AST.Expression Right = new Expression();
-        public AST.Expression Left = new Expression();
+        public AST.Expression Right = new();
+        public AST.Expression Left = new();
         public string Operator = "";
 
         public LogicalExpression()

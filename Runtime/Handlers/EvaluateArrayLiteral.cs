@@ -12,7 +12,7 @@ namespace Zephyr.Runtime.Handlers
     {
         public static RuntimeValue EvaluateArrayLiteral(ArrayLiteral expression, Environment environment)
         {
-            List<RuntimeValue> values = new List<RuntimeValue>();
+            List<RuntimeValue> values = new();
 
             foreach (Expression item in expression.Items)
             {

@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package Number = new Package("numbers", new
+        public static Package Number = new("numbers", new
         {
             negative = Helpers.CreateNativeFunction((args, env, expr) =>
             {

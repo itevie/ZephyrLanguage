@@ -13,7 +13,7 @@ namespace Zephyr
     {
         public static void Post(string url, object data, string action = "posting")
         {
-            HttpClient httpClient = new HttpClient();
+            HttpClient httpClient = new();
             string sendingData = JsonConvert.SerializeObject(data);
 
             HttpResponseMessage? res = null;

@@ -24,7 +24,7 @@ namespace Zephyr.Runtime.Handlers
                     // Check if it defines a var
                     if (statement.IdentifierToCreate != null)
                     {
-                        Environment scope = new Environment(environment);
+                        Environment scope = new(environment);
 
                         scope.DeclareVariable(
                             ((Identifier)statement.IdentifierToCreate).Symbol, 

@@ -9,7 +9,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package ProcessPkg = new Package("Process", new
+        public static Package ProcessPkg = new("Process", new
         {
             /* FUNCTIONS */
             enableDebug = Helpers.CreateNativeFunction((args, env, expr) =>

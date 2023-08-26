@@ -14,7 +14,7 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
-        public static Package JsonPKG = new Package("Json", new
+        public static Package JsonPKG = new("Json", new
         {
             parse = Helpers.CreateNativeFunction((args, env, expr) =>
             {
@@ -164,7 +164,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
         public static ObjectValue JObjectToZephyrObj(JObject jobj)
         {
-            ObjectValue obj = new ObjectValue();
+            ObjectValue obj = new();
 
             foreach (JProperty prop in jobj.Properties())
             {

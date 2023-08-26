@@ -33,6 +33,7 @@ namespace Zephyr.Lexer.Syntax
         public static Dictionary<string, Operator> BinaryOperators = new()
         {
             { "Concat", new Operator("~", TokenType.BinaryOperator) },
+            { "Coalesence", new Operator("??", TokenType.BinaryOperator) },
         };
 
         // Syntax sugar
@@ -65,7 +66,7 @@ namespace Zephyr.Lexer.Syntax
             { "ModulusAssignment", new Operator("%=", TokenType.AssignmentOperator) },
             { "MultiplyAssignment", new Operator("*=", TokenType.AssignmentOperator) },
             { "PowerAssignment", new Operator("**=", TokenType.AssignmentOperator) },
-            { "NullishAssignment", new Operator("??=", TokenType.AssignmentOperator) },
+            { "CoalesenceAssignment", new Operator("??=", TokenType.AssignmentOperator) },
             { "ConcatAssignment", new Operator("~=", TokenType.AssignmentOperator) },
         };
 

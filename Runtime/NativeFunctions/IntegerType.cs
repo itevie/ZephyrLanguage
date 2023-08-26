@@ -11,7 +11,7 @@ namespace Zephyr.Runtime.NativeFunctions
     internal partial class NativeFunctions 
     {
 
-        public static Package IntegerTypePkg = new Package("Integer", new
+        public static Package IntegerTypePkg = new("Integer", new
         {
             toString = Helpers.CreateNativeFunction((args, env, expr) =>
             {

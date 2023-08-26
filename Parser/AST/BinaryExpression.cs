@@ -8,8 +8,8 @@ namespace Zephyr.Parser.AST
 {
     internal class BinaryExpression : Expression
     {
-        public Expression Left = new Expression();
-        public Expression Right = new Expression();
+        public Expression Left = new();
+        public Expression Right = new();
         public string Operator = "";
 
         public BinaryExpression()
