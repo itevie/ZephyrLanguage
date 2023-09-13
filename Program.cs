@@ -153,7 +153,7 @@ namespace Zephyr
                            PackageManager.UploadPackage(new Uri(o.RepositoryUrl), o.Username, o.Password); 
                        }).WithParsed<CommandLineOptionsDocumentation>(o =>
                        {
-                           Console.WriteLine($"The current Zephyr documentation URl is on github:\nhttps://github.com/itevie/ZephyrLanguage/wiki");
+                           Console.WriteLine($"The current Zephyr documentation is on GitHub:\nhttps://github.com/itevie/ZephyrLanguage/wiki");
                        });
             } catch (Exception e)
             {
