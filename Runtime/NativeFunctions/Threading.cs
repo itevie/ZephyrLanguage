@@ -13,6 +13,10 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
+        /// <summary>
+        /// Main threading package - this package is NOT reliable.
+        /// Working on how threads work in both C# and in the language is needed.
+        /// </summary>
         public static Package Threading = new("Threading", new
         {
             sleep = Helpers.CreateNativeFunction((args, env, expr) =>
@@ -126,6 +130,13 @@ namespace Zephyr.Runtime.NativeFunctions
             }
         });
 
+        /// <summary>
+        /// This generates a new thread object - basically creating a new instance of a class, but it returns an object.
+        /// </summary>
+        /// <param name="function">The function to run</param>
+        /// <param name="environment">The environment to run it in</param>
+        /// <param name="expression">The expression containing location details</param>
+        /// <returns>The obejct that was created</returns>
         public static ObjectValue GenerateThreadObject(FunctionValue function, Environment environment, Parser.AST.Expression expression)
         {
             return Helpers.CreateObject(new

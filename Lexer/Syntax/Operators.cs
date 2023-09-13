@@ -93,11 +93,14 @@ namespace Zephyr.Lexer.Syntax
             { "QuestionMark", new Operator("?", TokenType.QuestionMark) },
             { "Colon", new Operator(":", TokenType.Colon) },
             { "ForEachIn", new Operator("in", TokenType.ForEachIn) },
-            { "Cast", new Operator("as", TokenType.Cast) },
+            { "Cast", new Operator("->", TokenType.Cast) },
             { "DoubleDot", new Operator("..", TokenType.DoubleDot) },
             { "DoubleDotUninclusive", new Operator(".<", TokenType.DoubleDotUninclusive) },
             { "Dot", new Operator(".", TokenType.Dot) }
         };
+
+        // Special
+        public static char SpecialIdentifierPrefix = '#';
 
         // List of all the above operators
         public static Dictionary<string, Operator> LetterContainingOperators = new();

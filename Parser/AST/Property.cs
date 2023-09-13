@@ -10,6 +10,10 @@ namespace Zephyr.Parser.AST
     {
         public string Key { get; set; } = "";
         public Expression? Value { get; set; } = null;
+
+        /// <summary>
+        /// This determines whether the value is inferred, e.g. var a = 2; { a } == { a: a }
+        /// </summary>
         public bool IsAlone = false;
 
         public Property()

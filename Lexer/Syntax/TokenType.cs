@@ -11,6 +11,7 @@ namespace Zephyr.Lexer.Syntax
         // Literal Types
         Number,
         Identifier,
+        SpecialIdentifier,
         String,
         Type,
 
@@ -19,6 +20,7 @@ namespace Zephyr.Lexer.Syntax
         Const,
         Export,
         Function,
+        Struct,
         Return,
         If,
         While,

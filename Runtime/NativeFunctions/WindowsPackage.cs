@@ -26,6 +26,10 @@ namespace Zephyr.Runtime.NativeFunctions
         [DllImport("user32.dll")]
         internal static extern bool SetClipboardData(uint uFormat, IntPtr data);
 
+        /// <summary>
+        /// This package allows interaction with some Win32 API calls.
+        /// This can only be imported on the Windows OS
+        /// </summary>
         public static NonDefaultPackage WinformsPackage = new("Windows", new
         {
             messageBox = new

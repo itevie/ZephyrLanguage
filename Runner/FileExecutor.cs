@@ -11,6 +11,9 @@ using Zephyr.Lexer;
 
 namespace Zephyr.Runner
 {
+    /// <summary>
+    /// This is the type of runner that executes once a file name is provided
+    /// </summary>
     internal class FileExecutor
     {
         public static Runtime.Environment GlobalEnvironment = new();

@@ -12,20 +12,36 @@ using Zephyr.Parser.AST;
 
 namespace Zephyr.Parser
 {
+    /// <summary>
+    /// Parses given lexed tokens into an AST.
+    /// </summary>
     internal class Parser
     {
         private List<Token> tokens = new();
 
+        /// <summary>
+        /// Checks if the current token is an End Of File token
+        /// </summary>
+        /// <returns>Whether or not the current token is an EOF</returns>
         private bool NotEOF()
         {
             return tokens[0].TokenType != TokenType.EOF;
         }
 
+        /// <summary>
+        /// Returns the current token
+        /// </summary>
+        /// <returns>The current token</returns>
         private Token At()
         {
             return tokens[0];
         }
 
+
+        /// <summary>
+        /// Consumes the current token, removes it and returns it
+        /// </summary>
+        /// <returns>Returns the current token</returns>
         private Token Eat()
         {
             Token previous = At();
@@ -50,6 +66,11 @@ namespace Zephyr.Parser
             return previous;
         }
 
+        /// <summary>
+        /// Used to check whether or not the expression requires a semi colon after it
+        /// </summary>
+        /// <param name="value">The value to check</param>
+        /// <returns>Yes or no</returns>
         private bool NeedSemiColon(Expression value)
         {
             if (value.Kind == Kind.FunctionDeclaration || value.Kind == Kind.ObjectLiteral || 
@@ -59,6 +80,13 @@ namespace Zephyr.Parser
             return true;
         }
 
+
+        /// <summary>
+        /// The base function for pasing the source code
+        /// </summary>
+        /// <param name="sourceCode">The source code as a string</param>
+        /// <param name="fileName">The file-name for locational reasons</param>
+        /// <returns>The parsed AST tree</returns>
         public AST.Program ProduceAST(string sourceCode, string fileName)
         {
             tokens = Lexer.Lexer.Tokenize(sourceCode, fileName);
@@ -106,6 +134,8 @@ namespace Zephyr.Parser
                     return ParseReturnStatement();
                 case TokenType.Try:
                     return ParseTryStatement();
+                case TokenType.Struct:
+                    return ParseStructStatement();
                 case TokenType.Import:
                     return ParseImportStatement();
                 case TokenType.Export:
@@ -129,6 +159,44 @@ namespace Zephyr.Parser
         /*
          * STATEMENTS - CONTROL FLOW
          */
+        private Expression ParseStructStatement()
+        {
+            Token structToken = Eat();
+
+            // Identifier name for struct
+            Token structName = Expect(TokenType.Identifier, "Expected struct name");
+
+            Expect(TokenType.OpenBrace, "Expected opening of struct body");
+
+            StructStatement structStatement = new();
+            structStatement.Name = structName.Value;
+
+            // Expect var dec. or func dec.
+            while (At().TokenType != TokenType.CloseBrace)
+            {
+                Expression expr = ParseControlFlowStatement();
+                Console.WriteLine(expr.Kind);
+
+                // Check type
+                if (expr.Kind != Kind.VariableDeclaration && expr.Kind != Kind.FunctionDeclaration)
+                {
+                    throw new ParserException(new()
+                    {
+                        Location = expr.Location,
+                        Error = $"Expected variable declaration or function declaration"
+                    });
+                }
+
+                Expect(TokenType.Semicolon, "Expected semi colon");
+
+                structStatement.Properties.Add(expr);
+            }
+
+            Eat();
+
+            return structStatement;
+        }
+
         private Expression ParseImportStatement()
         {
             Token importToken = Eat();
@@ -462,19 +530,27 @@ namespace Zephyr.Parser
                 functionNameToken = ParsePrimaryExpression();
             }
 
-            List<Expression> arguments = ParseArguments();
+            // Parse parameters
+            Expect(TokenType.OpenParan);
+
+            List<TypeIdentifierCombo> typeIdentifiers = new();
+
+            while (At().TokenType != TokenType.CloseParan)
+            {
+                TypeIdentifierCombo combo = ParseName();
+                typeIdentifiers.Add(combo);
+            }
+
+            Expect(TokenType.CloseParan);
+
             List<Expression> parameters = new();
 
-            foreach (Expression arg in arguments)
+            foreach (TypeIdentifierCombo paran in typeIdentifiers)
             {
-                // Check type
-                if (arg.Kind != Kind.Identifier)
-                    throw new ParserException(new()
-                    {
-                        Location = arg.Location,
-                        Error = $"All function paremeters must be an identifier"
-                    });
-                parameters.Add(arg);
+                parameters.Add(new Identifier()
+                {
+                    Symbol = paran.Identifier.Symbol
+                });
             }
 
             Expression body = ParseBlock();
@@ -856,9 +932,9 @@ namespace Zephyr.Parser
             return left;
         }*/
 
-        private AST.Expression ParseCallMemberExpression()
+        private AST.Expression ParseCallMemberExpression(bool noStart = false)
         {
-            AST.Expression member = ParseMemberExpression();
+            AST.Expression member = ParseMemberExpression(noStart);
 
             if (At().TokenType == TokenType.OpenParan)
             {
@@ -868,9 +944,9 @@ namespace Zephyr.Parser
             return member;
         }
 
-        private AST.Expression ParseMemberExpression()
+        private AST.Expression ParseMemberExpression(bool skipObj = false)
         {
-            AST.Expression obj = ParsePrimaryExpression();
+            AST.Expression obj = skipObj == false ? ParsePrimaryExpression() : new();
 
             Location? fullLocation = obj.Location;
 

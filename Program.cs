@@ -23,6 +23,7 @@ namespace Zephyr
         public static CommandLineOptions Options { get; set; } = new CommandLineOptions();
         public static Dictionary<string, ZephyrLoadedPackage> LoadedPackages = new();
         public static string EntryPoint = Directory.GetCurrentDirectory();
+        public static List<string> ZephyrArgs = new List<string>();
 
         public static string PipeOutput { get; set; } = "";
 
@@ -38,7 +39,7 @@ namespace Zephyr
             try
             {
                 // Construct new args
-                List<string> zephyrArgs = new();
+                //List<string> zephyrArgs = new();
                 List<string> runnerArgs = new();
 
                 bool after = false;
@@ -56,14 +57,14 @@ namespace Zephyr
                     }
                     else
                     {
-                        zephyrArgs.Add(args[i]);
+                        ZephyrArgs.Add(args[i]);
                     }
                 }
 
                 CommandLine.Parser.Default.ParseArguments<
                     CommandLineOptions, CommandLineOptionsInstallPackage,
                     CommandLineOptionsCreatePackage, CommandLineOptionsRegisterUser,
-                    CommandLineOptionsUploadPackage
+                    CommandLineOptionsUploadPackage, CommandLineOptionsDocumentation
                 >(runnerArgs.ToArray())
                        .WithParsed<CommandLineOptions>(o =>
                        {
@@ -150,6 +151,9 @@ namespace Zephyr
                        }).WithParsed<CommandLineOptionsUploadPackage>(o =>
                        {
                            PackageManager.UploadPackage(new Uri(o.RepositoryUrl), o.Username, o.Password); 
+                       }).WithParsed<CommandLineOptionsDocumentation>(o =>
+                       {
+                           Console.WriteLine($"The current Zephyr documentation URl is on github:\nhttps://github.com/itevie/ZephyrLanguage/wiki");
                        });
             } catch (Exception e)
             {

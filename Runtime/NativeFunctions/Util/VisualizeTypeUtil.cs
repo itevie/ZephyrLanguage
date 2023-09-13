@@ -10,6 +10,14 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class Util
     {
+        /// <summary>
+        /// Converts any runtime value into a readable, colored string
+        /// </summary>
+        /// <param name="value">The value to visualise</param>
+        /// <param name="showQuotes">Show quotes on strings, used for when the string is in an array or a value in an object</param>
+        /// <param name="objectIndent">The current object indent</param>
+        /// <param name="noColors">Whether or not to not use colors</param>
+        /// <returns></returns>
         public static string VisualizeType(RuntimeValue value, bool showQuotes = false, int objectIndent = 0, bool noColors = false)
         {
             if (value == null)

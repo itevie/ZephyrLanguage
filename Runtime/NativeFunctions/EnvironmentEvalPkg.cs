@@ -12,6 +12,10 @@ namespace Zephyr.Runtime.NativeFunctions
 {
     internal partial class NativeFunctions
     {
+        /// <summary>
+        /// This package is used for executing Zephyr code directly in the language.
+        /// Similar to JavaScript's eval() function, but instead it is creating an entire new environemnt.
+        /// </summary>
         public static Package EnvironmentEvalPkg = new("Evaluator", new
         {
             createEnvironment = Helpers.CreateNativeFunction((args, env, expr) =>

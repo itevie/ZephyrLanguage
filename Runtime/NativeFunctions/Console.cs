@@ -38,74 +38,68 @@ namespace Zephyr.Runtime.NativeFunctions
                 }
             }),
 
-            @out = new
+            writeLine = Helpers.CreateNativeFunction((args, environment, expr) =>
             {
-                writeLine = Helpers.CreateNativeFunction((args, environment, expr) =>
-                {
-                    string text = "";
+                string text = "";
 
-                    foreach (RuntimeValue value in args)
-                    {
-                        text += Util.VisualizeType(value) + " ";
-                        Program.PipeOutput += Util.VisualizeType(value) + " ";
-                    }
-                    Console.WriteLine(text);
-                    Program.PipeOutput += "\n";
-                    return Helpers.CreateNull();
-                }, options: new()
+                foreach (RuntimeValue value in args)
                 {
-                    Name = "writeLine",
-                    UncheckedParameters = true
-                }),
-
-                write = Helpers.CreateNativeFunction((args, environment, expr) =>
-                {
-                    Util.ExpectExact(args, new() { Values.ValueType.Any }, expr);
-                    Console.Write(Util.VisualizeType(args[0]));
-                    Program.PipeOutput += Util.VisualizeType(args[0]);
-                    return Helpers.CreateNull();
-                }, options: new()
-                {
-                    Name = "write",
-                    Parameters =
-                    {
-                        new()
-                        {
-                            Name = "what",
-                            Type = Values.ValueType.String
-                        }
-                    }
-                }),
-            },
-
-            @in = new
+                    text += Util.VisualizeType(value) + " ";
+                    Program.PipeOutput += Util.VisualizeType(value) + " ";
+                }
+                Console.WriteLine(text);
+                Program.PipeOutput += "\n";
+                return Helpers.CreateNull();
+            }, options: new()
             {
-                readLine = Helpers.CreateNativeFunction((args, environment, expr) =>
-                {
-                    return Helpers.CreateString(Console.ReadLine() ?? "");
-                }, options: new()
-                {
-                    Name = "readLine"
-                }),
+                Name = "writeLine",
+                UncheckedParameters = true
+            }),
 
-                readKey = Helpers.CreateNativeFunction((args, environment, expr) =>
+            write = Helpers.CreateNativeFunction((args, environment, expr) =>
+            {
+                Util.ExpectExact(args, new() { Values.ValueType.Any }, expr);
+                Console.Write(Util.VisualizeType(args[0]));
+                Program.PipeOutput += Util.VisualizeType(args[0]);
+                return Helpers.CreateNull();
+            }, options: new()
+            {
+                Name = "write",
+                Parameters =
                 {
-                    ConsoleKeyInfo key = Console.ReadKey(true);
-
-                    RuntimeValue obj = Helpers.CreateObject(new
+                    new()
                     {
-                        @char = Helpers.CreateString(key.KeyChar.ToString()),
-                        isAlt = Helpers.CreateBoolean(key.Modifiers.HasFlag(ConsoleModifiers.Alt)),
-                        isControl = Helpers.CreateBoolean(key.Modifiers.HasFlag(ConsoleModifiers.Control)),
-                        isShift = Helpers.CreateBoolean(key.Modifiers.HasFlag(ConsoleModifiers.Shift)),
-                    });
+                        Name = "what",
+                        Type = Values.ValueType.String
+                    }
+                }
+            }),
 
-                    return obj;
-                }, options: new()
+            readLine = Helpers.CreateNativeFunction((args, environment, expr) =>
+            {
+                return Helpers.CreateString(Console.ReadLine() ?? "");
+            }, options: new()
+            {
+                Name = "readLine"
+            }),
+
+            readKey = Helpers.CreateNativeFunction((args, environment, expr) =>
+            {
+                ConsoleKeyInfo key = Console.ReadKey(true);
+
+                RuntimeValue obj = Helpers.CreateObject(new
                 {
-                    Name = "readKey"
-                }),
-            }
+                    @char = Helpers.CreateString(key.KeyChar.ToString()),
+                    isAlt = Helpers.CreateBoolean(key.Modifiers.HasFlag(ConsoleModifiers.Alt)),
+                    isControl = Helpers.CreateBoolean(key.Modifiers.HasFlag(ConsoleModifiers.Control)),
+                    isShift = Helpers.CreateBoolean(key.Modifiers.HasFlag(ConsoleModifiers.Shift)),
+                });
+
+                return obj;
+            }, options: new()
+            {
+                Name = "readKey"
+            }),
         });
     }
 }

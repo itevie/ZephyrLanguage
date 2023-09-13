@@ -13,10 +13,24 @@ using Zephyr.Runtime.Values.Helpers;
 
 namespace Zephyr.Runtime
 {
+    /// <summary>
+    /// An environemnt is where all variables are stored
+    /// </summary>
     internal class Environment
     {
+        /// <summary>
+        /// The parent variable
+        /// </summary>
         private Environment? _parent;
+
+        /// <summary>
+        /// The variables this environment contains
+        /// </summary>
         public Dictionary<string, Variable> _variables = new();
+
+        /// <summary>
+        /// Exported VALUES
+        /// </summary>
         public Dictionary<string, RuntimeValue> ExportedVariables = new();
         public string Directory = "";
 

@@ -10,10 +10,11 @@ namespace Zephyr.Lexer.Syntax
     {
         public static Dictionary<string, TokenType> TheKeywords = new()
         {
-            { "let", TokenType.Let },
+            { "var", TokenType.Let },
             { "const", TokenType.Const },
             { "export", TokenType.Export },
-            { "function", TokenType.Function },
+            { "func", TokenType.Function },
+            { "struct", TokenType.Struct },
             { "return", TokenType.Return },
             { "if", TokenType.If },
             { "while", TokenType.While },

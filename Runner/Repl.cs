@@ -5,6 +5,9 @@ using Zephyr.Runtime.Values;
 
 namespace Zephyr.Runner
 {
+    /// <summary>
+    /// This is ran when no file name is provided, works same as any other programming language's REPL mode works.
+    /// </summary>
     internal class Repl
     {
         Runtime.Environment environment = new();

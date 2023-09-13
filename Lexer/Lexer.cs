@@ -29,8 +29,17 @@ namespace Zephyr.Lexer
             return src == ' ' || src == '\t' || src == '\r';
         }
 
+        /// <summary>
+        /// Converts any given source code into a token list
+        /// </summary>
+        /// <param name="sourceCode">The source code to convert</param>
+        /// <param name="fileName">The file-name the source code belongs to. Only used for locational reasons.</param>
+        /// <returns>The tokenized output</returns>
+        /// <exception cref="Exception"></exception>
+        /// <exception cref="LexerException"></exception>
         public static List<Token> Tokenize(string sourceCode, string fileName = "")
         {
+            // Start stopwatch for monitoring how long the lexing took
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
@@ -40,10 +49,13 @@ namespace Zephyr.Lexer
             int lineIdx = 0;
             int currentLine = 0;
 
+            // Loop through all characters of source
             while (src.Length > 0)
             {
                 string tokenValue = "";
                 TokenType? tokenType = null;
+
+                // Construct base location for others to add onto
                 Location location = new()
                 {
                     TokenStart = lineIdx,
@@ -52,6 +64,7 @@ namespace Zephyr.Lexer
                     FileName = fileName
                 };
 
+                // For removing the first character in the source, returns the removed character
                 string removeFirst()
                 {
                     string value = src[0].ToString();
@@ -60,6 +73,7 @@ namespace Zephyr.Lexer
                     return value;
                 }
 
+                // Sets the token instead of having to set it manually
                 void setToken(string val, TokenType tt)
                 {
                     tokenValue = val;
@@ -226,11 +240,17 @@ namespace Zephyr.Lexer
                     }
 
                     // Check or identifier
-                    else if (Char.IsLetter(src[0]) || src[0] == '_')
+                    else if (Char.IsLetter(src[0]) || src[0] == '_' || src[0] == Operators.SpecialIdentifierPrefix)
                     {
                         string identifier = "";
 
-                        while (src.Length > 0 && (Char.IsLetter(src[0]) || src[0] == '_'))
+                        // Check if it is special ident.
+                        if (src[0] == Operators.SpecialIdentifierPrefix)
+                        {
+                            identifier += removeFirst();
+                        }
+
+                        while (src.Length > 0 && (Char.IsLetter(src[0]) || src[0] == '_' || Char.IsNumber(src[0])))
                         {
                             identifier += removeFirst();
                         }

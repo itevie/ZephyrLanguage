@@ -8,6 +8,10 @@ using Zephyr.Parser.AST;
 
 namespace Zephyr.Parser
 {
+    /// <summary>
+    /// This contains a type and an identifier, this is used everywhere
+    /// Var. decl., param.: int? a
+    /// </summary>
     internal class TypeIdentifierCombo
     {
         public Identifier Identifier;

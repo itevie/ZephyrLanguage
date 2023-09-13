@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Zephyr.Parser.AST
 {
+    /// <summary>
+    /// All AST nodes will reference this
+    /// </summary>
     internal enum Kind
     {
         Unknown,

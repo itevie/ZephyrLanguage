@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Zephyr.Parser.AST
 {
+    /// <summary>
+    /// The base AST node for the entire tree
+    /// </summary>
     internal class Program : Expression
     {
         public List<Expression> Body = new();

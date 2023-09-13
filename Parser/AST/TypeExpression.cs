@@ -2,6 +2,9 @@
 
 namespace Zephyr.Parser.AST
 {
+    /// <summary>
+    /// Represents a type used anywhere - variable decl., parameter, etc.
+    /// </summary>
     internal class TypeExpression
     {
         public Runtime.Values.ValueType Type { get; set; } = Runtime.Values.ValueType.Any;

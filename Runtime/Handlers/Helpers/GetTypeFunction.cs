@@ -13,20 +13,38 @@ namespace Zephyr.Runtime.Handlers
 {
     internal partial class Helpers
     {
+        /// <summary>
+        /// This checks all the in-built type functions.
+        /// E.g., Any package, this is avaiable on all types
+        /// </summary>
+        /// <param name="type">The type to check</param>
+        /// <param name="func">The function name</param>
+        /// <param name="env">The environemnt to check in</param>
+        /// <param name="loc">The location</param>
+        /// <returns>A modified native function that was found</returns>
+        /// <exception cref="RuntimeException"></exception>
         public static NativeFunction GetTypeFunction(string type, string func, Environment env, Location? loc)
         {
+            // Get the type packages
             ObjectValue anyPkg = (ObjectValue)env.LookupVariable("Any");
             ObjectValue givenPkg = (ObjectValue)env.LookupVariable(type);
 
             NativeFunction givenFunc;
 
+            // Check if the actual type contains the given function
             if (givenPkg.Properties.ContainsKey(func) && ((NativeFunction)givenPkg.Properties[func]).Options.UsableAsTypeFunction)
             {
                 givenFunc = (NativeFunction)givenPkg.Properties[func];
-            } else if (anyPkg.Properties.ContainsKey(func) && ((NativeFunction)anyPkg.Properties[func]).Options.UsableAsTypeFunction)
+            } 
+            
+            // Check if the any type contains the given function
+            else if (anyPkg.Properties.ContainsKey(func) && ((NativeFunction)anyPkg.Properties[func]).Options.UsableAsTypeFunction)
             {
                 givenFunc = (NativeFunction)anyPkg.Properties[func];
-            } else
+            } 
+            
+            // No type function was found
+            else
             {
                 throw new RuntimeException(new()
                 {
@@ -35,6 +53,7 @@ namespace Zephyr.Runtime.Handlers
                 });
             }
 
+            // Re-construct the native function
             NativeFunction f = Values.Helpers.Helpers.CreateNativeFunction(givenFunc.Call);
             f.Name = givenFunc.Name;
             f.Options = givenFunc.Options;

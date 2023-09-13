@@ -9,8 +9,18 @@ using Zephyr.Runtime.Handlers;
 
 namespace Zephyr.Runtime
 {
+    /// <summary>
+    /// This evaluates an AST node by checking it's kind and running the appropiate function
+    /// </summary>
     internal class Interpreter
     {
+        /// <summary>
+        /// Evaluates the AST node
+        /// </summary>
+        /// <param name="astNode">The AST node to execute</param>
+        /// <param name="environment">The environment in which to run it in</param>
+        /// <returns>The returned value</returns>
+        /// <exception cref="Exception"></exception>
         public static Values.RuntimeValue Evaluate(Expression astNode, Environment environment)
         {
             switch (astNode.Kind)
@@ -74,6 +84,8 @@ namespace Zephyr.Runtime
                     return Expressions.EvaluateCastExpression((CastExpression)astNode, environment);
                 case Kind.TernaryExpression:
                     return Expressions.EvaluateTernaryExpression((TernaryExpression)astNode, environment);
+
+                // AST node's kind is unknown and cannot be computed
                 default:
                     throw new Exception($"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}");
             }

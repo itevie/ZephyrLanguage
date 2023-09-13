@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zephyr.Runtime.Values;
 using Zephyr.Runtime.Values.Helpers;
 
 namespace Zephyr.Runtime.NativeFunctions
@@ -41,6 +42,15 @@ namespace Zephyr.Runtime.NativeFunctions
             }),
 
             /* VALUES */
+            args = Helpers.CreateArray(Program.ZephyrArgs.ConvertAll<RuntimeValue>(x => Helpers.CreateString(x))),
+            /*args = Helpers.CreateNativeFunction((args, env, expr) =>
+            {
+                return Helpers.CreateArray(Program.ZephyrArgs.ConvertAll<RuntimeValue>(x => Helpers.CreateString(x)));
+            }, options: new()
+            {
+                Name = "args",
+            }),*/
+
             iterationLimit = Helpers.CreateInteger(Program.Options.MaxLoopIterations),
             noIterationLimit = Helpers.CreateBoolean(Program.Options.NoIterationLimit),
             permissions = Helpers.CreateObject(new

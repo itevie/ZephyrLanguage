@@ -98,4 +98,10 @@ namespace Zephyr
         [Option('p', "password", HelpText = "The password of the user", Required = true)]
         public string Password { get; set; } = "";
     }
+
+    [Verb("docs", HelpText = "The documentation for Zephyr")]
+    internal class CommandLineOptionsDocumentation
+    {
+
+    }
 }

@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Zephyr
 {
+    /// <summary>
+    /// This simply contains a reference to where a package is located within zephyr_packages
+    /// </summary>
     internal class ZephyrLoadedPackage
     {
         public string EntryPoint;
