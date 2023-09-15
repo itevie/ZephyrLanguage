@@ -43,6 +43,9 @@ namespace Zephyr.Runtime.Handlers
                 case Values.ValueType.Variable:
                     type = "Variable";
                     break;
+                case Values.ValueType.Event:
+                    type = "Event";
+                    break;
             }
 
             // If it is an object do something special

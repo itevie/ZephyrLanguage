@@ -17,6 +17,7 @@ namespace Zephyr.Lexer.Syntax
 
         // Keywords
         Let,
+        Event,
         Const,
         Export,
         Function,

@@ -71,7 +71,7 @@ namespace Zephyr.Parser
         /// </summary>
         /// <param name="value">The value to check</param>
         /// <returns>Yes or no</returns>
-        private bool NeedSemiColon(Expression value)
+        private static bool NeedSemiColon(Expression value)
         {
             if (value.Kind == Kind.FunctionDeclaration || value.Kind == Kind.ObjectLiteral || 
                 value.Kind == Kind.IfStatement || value.Kind == Kind.WhileStatement ||
@@ -116,50 +116,45 @@ namespace Zephyr.Parser
             return program;
         }
 
+        /// <summary>
+        /// These are statements which MUST be on their own and cannot be used in any sort of way as a value
+        /// </summary>
+        /// <returns></returns>
         private Expression ParseControlFlowStatement()
         {
-            switch (At().TokenType)
+            return At().TokenType switch
             {
-                case TokenType.Let:
-                    return ParseVariableDeclaration();
-                case TokenType.Const:
-                    return ParseVariableDeclaration();
-                case TokenType.If:
-                    return ParseIfStatement();
-                case TokenType.While:
-                    return ParseWhileStatement();
-                case TokenType.For:
-                    return ParseForStatement();
-                case TokenType.Return:
-                    return ParseReturnStatement();
-                case TokenType.Try:
-                    return ParseTryStatement();
-                case TokenType.Struct:
-                    return ParseStructStatement();
-                case TokenType.Import:
-                    return ParseImportStatement();
-                case TokenType.Export:
-                    return ParseExportStatement();
+                TokenType.Let => ParseVariableDeclaration(),
+                TokenType.Event => ParseEventStatement(),
+                TokenType.Const => ParseVariableDeclaration(),
+                TokenType.If => ParseIfStatement(),
+                TokenType.While => ParseWhileStatement(),
+                TokenType.For => ParseForStatement(),
+                TokenType.Return => ParseReturnStatement(),
+                TokenType.Try => ParseTryStatement(),
+                TokenType.Struct => ParseStructStatement(),
+                TokenType.Import => ParseImportStatement(),
+                TokenType.Export => ParseExportStatement(),
                 // Keywords with no extra info
-                case TokenType.Break:
-                    return new BreakStatement()
-                    {
-                        Location = Eat().Location
-                    };
-                default:
-                    return ParseStatement();
-            }
+                TokenType.Break => new BreakStatement()
+                {
+                    Location = Eat().Location
+                },
+                _ => ParseStatement(),
+            };
         }
 
+        /// <summary>
+        /// These are statements, but CAN be used as a value (in PrimaryExpression)
+        /// </summary>
+        /// <returns></returns>
         private Expression ParseStatement()
         {
-            switch (At().TokenType)
+            return At().TokenType switch
             {
-                case TokenType.Function:
-                    return ParseFunctionDeclaration();
-                default:
-                    return ParseExpression();
-            }
+                TokenType.Function => ParseFunctionDeclaration(),
+                _ => ParseExpression(),
+            };
         }
 
         /*
@@ -174,8 +169,11 @@ namespace Zephyr.Parser
 
             Expect(TokenType.OpenBrace, "Expected opening of struct body");
 
-            StructStatement structStatement = new();
-            structStatement.Name = structName.Value;
+            StructStatement structStatement = new()
+            {
+                Name = structName.Value,
+                Location = structToken.Location
+            };
 
             // Expect var dec. or func dec.
             while (At().TokenType != TokenType.CloseBrace)
@@ -246,6 +244,12 @@ namespace Zephyr.Parser
             };
         }
 
+        /// <summary>
+        /// Syntax:
+        ///     - export [value] as [identifier];
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ParserException"></exception>
         private Expression ParseExportStatement()
         {
             Token exportToken = Eat();
@@ -273,6 +277,38 @@ namespace Zephyr.Parser
             };
         }
 
+        /// <summary>
+        /// Syntax:
+        ///     - event [type] [identifier];
+        /// </summary>
+        /// <returns></returns>
+        private Expression ParseEventStatement()
+        {
+            Token eventToken = Eat();
+
+            TypeIdentifierCombo combo = ParseName();
+
+            return new EventDeclarationStatement()
+            {
+                Location = eventToken.Location,
+                Identifier = combo.Identifier,
+                Type = new TypeExpression()
+                {
+                    Type = combo.Type,
+                    IsNullable = combo.isNullable
+                }
+            };
+        }
+
+        /// <summary>
+        /// Syntax:
+        ///     - [modifiers?] var|const [identifier];
+        ///     - [modifiers?] var|const [identifier] = [value];
+        ///     - [modifiers?] var|const [type]? [identifier];
+        ///     - [modifiers?] var|const [type][?] [identifier] = [value];
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ParserException"></exception>
         private Expression ParseVariableDeclaration()
         {
             Token variableDeclarationToken = Eat();
@@ -595,6 +631,10 @@ namespace Zephyr.Parser
             };
         }
 
+        /// <summary>
+        /// Parses a type + name combo, e.g. int[]? a
+        /// </summary>
+        /// <returns></returns>
         private TypeIdentifierCombo ParseName()
         {
             Runtime.Values.ValueType type = Runtime.Values.ValueType.Any;
@@ -627,7 +667,13 @@ namespace Zephyr.Parser
             return new TypeIdentifierCombo(ident, type, isNullable);
         }
 
-        private Location? ExpandLocation(Location? a, Location? b)
+        /// <summary>
+        /// Expands a location by taking the start of a and the end of b and combining into one
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        /// <returns></returns>
+        private static Location? ExpandLocation(Location? a, Location? b)
         {
             if (a != null && b == null) return a;
             if (a == null || b == null) return null;
@@ -646,14 +692,14 @@ namespace Zephyr.Parser
         /*
          * EXPRESSIONS
          */
-        private AST.Expression ParseExpression()
+        private Expression ParseExpression()
         {
             return ParseAssignmentExpression();
         }
 
-        private AST.Expression ParseAssignmentExpression()
+        private Expression ParseAssignmentExpression()
         {
-            AST.Expression left = ParserTernaryExpression();
+            Expression left = ParserTernaryExpression();
 
             // Check if next is assignment operator
             if (At().TokenType == TokenType.AssignmentOperator)
@@ -700,15 +746,15 @@ namespace Zephyr.Parser
             return left;
         }
 
-        private AST.Expression ParseLogicalExpression()
+        private Expression ParseLogicalExpression()
         {
-            AST.Expression left = ParseComparisonExpression();
+            Expression left = ParseComparisonExpression();
 
             // Check if next is logical
             if (At().TokenType == TokenType.LogicalOperator)
             {
                 string op = Eat().Value;
-                AST.Expression right = ParseLogicalExpression();
+                Expression right = ParseLogicalExpression();
 
                 return new LogicalExpression()
                 {
@@ -722,9 +768,9 @@ namespace Zephyr.Parser
             return left;
         }
 
-        private AST.Expression ParseComparisonExpression()
+        private Expression ParseComparisonExpression()
         {
-            AST.Expression left = ParseAdditiveExpression();
+            Expression left = ParseAdditiveExpression();
 
             // Check if next is comparison
             if (At().TokenType == TokenType.ComparisonOperator)
@@ -732,7 +778,7 @@ namespace Zephyr.Parser
                 Token operatorToken = Eat();
                 string op = operatorToken.Value;
 
-                AST.Expression right = At().TokenType == TokenType.ComparisonOperator
+                Expression right = At().TokenType == TokenType.ComparisonOperator
                     ? ParseComparisonExpression()
                     : ParseAdditiveExpression();
 
@@ -749,9 +795,9 @@ namespace Zephyr.Parser
             return left;
         }
 
-        private AST.Expression ParseAdditiveExpression()
+        private Expression ParseAdditiveExpression()
         {
-            AST.Expression left = ParseMultiplicativeExpression();
+            Expression left = ParseMultiplicativeExpression();
 
             while (
                 At().Value == Operators.ArithmeticOperators["Plus"].Symbol ||
@@ -760,7 +806,7 @@ namespace Zephyr.Parser
             {
                 Token operatorToken = Eat();
                 string op = operatorToken.Value;
-                AST.Expression right = ParseMultiplicativeExpression();
+                Expression right = ParseMultiplicativeExpression();
 
                 left = new BinaryExpression()
                 {
@@ -774,9 +820,9 @@ namespace Zephyr.Parser
             return left;
         }
 
-        private AST.Expression ParseMultiplicativeExpression()
+        private Expression ParseMultiplicativeExpression()
         {
-            AST.Expression left = ParseCastExpression();
+            Expression left = ParseCastExpression();
 
             while (
                 At().Value == Operators.ArithmeticOperators["Multiply"].Symbol ||
@@ -788,7 +834,7 @@ namespace Zephyr.Parser
             {
                 Token operatorToken = Eat();
                 string op = operatorToken.Value;
-                AST.Expression right = ParseCastExpression();
+                Expression right = ParseCastExpression();
 
                 left = new BinaryExpression()
                 {
@@ -864,7 +910,7 @@ namespace Zephyr.Parser
             return left;
         }
 
-        private AST.Expression ParseUnaryExpression()
+        private Expression ParseUnaryExpression()
         {
             // Check if current is unary
             if (At().TokenType == TokenType.UnaryOperator)
@@ -872,7 +918,7 @@ namespace Zephyr.Parser
                 Token operatorToken = Eat();
 
                 // Get the righ hand side
-                AST.Expression right = At().TokenType == TokenType.UnaryOperator
+                Expression right = At().TokenType == TokenType.UnaryOperator
                     ? ParseUnaryExpression()
                     : ParseMemberExpression();
 
@@ -938,9 +984,9 @@ namespace Zephyr.Parser
             return left;
         }*/
 
-        private AST.Expression ParseCallMemberExpression(bool noStart = false)
+        private Expression ParseCallMemberExpression(bool noStart = false)
         {
-            AST.Expression member = ParseMemberExpression(noStart);
+            Expression member = ParseMemberExpression(noStart);
 
             if (At().TokenType == TokenType.OpenParan)
             {
@@ -950,16 +996,16 @@ namespace Zephyr.Parser
             return member;
         }
 
-        private AST.Expression ParseMemberExpression(bool skipObj = false)
+        private Expression ParseMemberExpression(bool skipObj = false)
         {
-            AST.Expression obj = skipObj == false ? ParsePrimaryExpression() : new();
+            Expression obj = skipObj == false ? ParsePrimaryExpression() : new();
 
             Location? fullLocation = obj.Location;
 
             while (At().TokenType == TokenType.Dot || At().TokenType == TokenType.OpenSquare)
             {
                 Token op = Eat();
-                AST.Expression property;
+                Expression property;
                 bool computed = false;
                 fullLocation = ExpandLocation(fullLocation, op.Location);
 
@@ -1000,9 +1046,9 @@ namespace Zephyr.Parser
             return obj;
         }
 
-        private AST.Expression ParseCallExpression(AST.Expression caller)
+        private Expression ParseCallExpression(Expression caller)
         {
-            AST.CallExpression callExpression = new()
+            CallExpression callExpression = new()
             {
                 Caller = caller,
                 Arguments = ParseArguments(),
@@ -1019,11 +1065,11 @@ namespace Zephyr.Parser
             return callExpression;
         }
 
-        private List<AST.Expression> ParseArguments()
+        private List<Expression> ParseArguments()
         {
             Expect(TokenType.OpenParan, $"Expected open parenthesis");
 
-            List<AST.Expression> args = At().TokenType == TokenType.CloseParan
+            List<Expression> args = At().TokenType == TokenType.CloseParan
                 ? new()
                 : ParseArgumentsList();
 
@@ -1032,9 +1078,9 @@ namespace Zephyr.Parser
             return args;
         }
 
-        private List<AST.Expression> ParseArgumentsList()
+        private List<Expression> ParseArgumentsList()
         {
-            List<AST.Expression> args = new()
+            List<Expression> args = new()
             {
                 ParseExpression()
             };
@@ -1048,7 +1094,7 @@ namespace Zephyr.Parser
             return args;
         }
 
-        private AST.Expression ParseObjectLiteral()
+        private Expression ParseObjectLiteral()
         {
             Token openingbrace = Expect(TokenType.OpenBrace, "Expected open brace for object");
 
@@ -1113,7 +1159,7 @@ namespace Zephyr.Parser
         /// </summary>
         /// <returns></returns>
         /// <exception cref="ParserException"></exception>
-        private AST.Expression ParsePrimaryExpression()
+        private Expression ParsePrimaryExpression()
         {
             TokenType token = At().TokenType;
 
@@ -1129,11 +1175,11 @@ namespace Zephyr.Parser
                 // Literals - any number
                 case TokenType.Number:
                     Token numberToken = Eat();
-                    return new AST.NumericLiteral()
+                    return new NumericLiteral()
                     {
                         Value = double.Parse(numberToken.Value),
                         Location = numberToken.Location,
-                        IsFloat = numberToken.Value.Contains(".")
+                        IsFloat = numberToken.Value.Contains('.')
                     };
                 // Literals - any negative number
                 case TokenType.BinaryOperator:
@@ -1142,11 +1188,11 @@ namespace Zephyr.Parser
                         Eat();
                         Token numTok = Expect(TokenType.Number, "Expected number");
 
-                        return new AST.NumericLiteral()
+                        return new NumericLiteral()
                         {
                             Value = -double.Parse(numTok.Value),
                             Location = numTok.Location,
-                            IsFloat = numTok.Value.Contains(".")
+                            IsFloat = numTok.Value.Contains('.')
                         };
                     }
 
@@ -1205,13 +1251,14 @@ namespace Zephyr.Parser
                     // Expect ident.
                     Token varrefIdentifier = Expect(TokenType.Identifier, "Expected variable name");
 
-                    VarrefExpression varrefExpr = new VarrefExpression()
+                    VarrefExpression varrefExpr = new()
                     {
                         Identifier = new Identifier()
                         {
                             Symbol = varrefIdentifier.Value,
                             Location = varrefIdentifier.Location,
-                        }
+                        },
+                        Location = varrefToken.Location
                     };
 
                     return varrefExpr;

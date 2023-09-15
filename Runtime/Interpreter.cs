@@ -23,76 +23,47 @@ namespace Zephyr.Runtime
         /// <exception cref="Exception"></exception>
         public static Values.RuntimeValue Evaluate(Expression astNode, Environment environment)
         {
-            switch (astNode.Kind)
+            return astNode.Kind switch
             {
                 // Statements
-                case Kind.Program:
-                    return Statements.EvaluateProgram((Parser.AST.Program)astNode, environment);
-                case Kind.VariableDeclaration:
-                    return Statements.EvaluateVariableDeclaration((VariableDeclaration)astNode, environment);
-                case Kind.IfStatement:
-                    return Statements.EvaluateIfStatement((IfStatement)astNode, environment);
-                case Kind.BlockStatement:
-                    return Statements.EvaluateBlockStatement((BlockStatement)astNode, environment);
-                case Kind.FunctionDeclaration:
-                    return Statements.EvaluateFunctionDeclaration((FunctionDeclaration)astNode, environment);
-                case Kind.ReturnStatement:
-                    return Statements.EvaluateRuntimeStatment((ReturnStatement)astNode, environment);
-                case Kind.BreakStatement:
-                    return Statements.EvaluateBreakStatement((BreakStatement)astNode, environment);
-                case Kind.WhileStatement:
-                    return Statements.EvaluateWhileStatement((WhileStatement)astNode, environment);
-                case Kind.ImportStatement:
-                    return Statements.EvaluateImportStatement((ImportStatement)astNode, environment);
-                case Kind.ExportStatement:
-                    return Statements.EvaluateExportStatement((ExportStatement)astNode, environment);
-                case Kind.ForEachStatement:
-                    return Statements.EvaluateForEachStatement((ForEachStatement)astNode, environment);
-                case Kind.TryStatement:
-                    return Statements.EvaluateTryStatement((TryStatement)astNode, environment);
+                Kind.Program => Statements.EvaluateProgram((Parser.AST.Program)astNode, environment),
+                Kind.VariableDeclaration => Statements.EvaluateVariableDeclaration((VariableDeclaration)astNode, environment),
+                Kind.EventDeclaration => Statements.EventDeclarationStatement((EventDeclarationStatement)astNode, environment),
+                Kind.IfStatement => Statements.EvaluateIfStatement((IfStatement)astNode, environment),
+                Kind.BlockStatement => Statements.EvaluateBlockStatement((BlockStatement)astNode, environment),
+                Kind.FunctionDeclaration => Statements.EvaluateFunctionDeclaration((FunctionDeclaration)astNode, environment),
+                Kind.ReturnStatement => Statements.EvaluateRuntimeStatment((ReturnStatement)astNode, environment),
+                Kind.BreakStatement => Statements.EvaluateBreakStatement((BreakStatement)astNode, environment),
+                Kind.WhileStatement => Statements.EvaluateWhileStatement((WhileStatement)astNode, environment),
+                Kind.ImportStatement => Statements.EvaluateImportStatement((ImportStatement)astNode, environment),
+                Kind.ExportStatement => Statements.EvaluateExportStatement((ExportStatement)astNode, environment),
+                Kind.ForEachStatement => Statements.EvaluateForEachStatement((ForEachStatement)astNode, environment),
+                Kind.TryStatement => Statements.EvaluateTryStatement((TryStatement)astNode, environment),
 
                 // Literals
-                case Kind.Identifier:
-                    return Expressions.EvaluateIdentifier((Identifier)astNode, environment);
-                case Kind.NumericLiteral:
-                    return Expressions.EvaluateNumericLiteral((NumericLiteral)astNode, environment);
-                case Kind.StringLiteral:
-                    return Expressions.EvaluateStringLiteral((StringLiteral)astNode, environment);
-                case Kind.ArrayLiteral:
-                    return Expressions.EvaluateArrayLiteral((ArrayLiteral)astNode, environment);
-                case Kind.ObjectLiteral:
-                    return Expressions.EvaluateObjectLiteral((ObjectLiteral)astNode, environment);
+                Kind.Identifier => Expressions.EvaluateIdentifier((Identifier)astNode, environment),
+                Kind.NumericLiteral => Expressions.EvaluateNumericLiteral((NumericLiteral)astNode, environment),
+                Kind.StringLiteral => Expressions.EvaluateStringLiteral((StringLiteral)astNode, environment),
+                Kind.ArrayLiteral => Expressions.EvaluateArrayLiteral((ArrayLiteral)astNode, environment),
+                Kind.ObjectLiteral => Expressions.EvaluateObjectLiteral((ObjectLiteral)astNode, environment),
 
                 // Expressions
-                case Kind.BinaryExpression:
-                    return Expressions.EvaluateBinaryExpression((BinaryExpression)astNode, environment);
-                case Kind.LogicalExpression:
-                    return Expressions.EvaluateLogicalExpression((LogicalExpression)astNode, environment);
-                case Kind.UnaryRightExpression:
-                    return Expressions.EvaluateUnaryRightExpression((UnaryRightExpression)astNode, environment);
-                case Kind.UnaryExpression:
-                    return Expressions.EvaluateUnaryExpression((UnaryExpression)astNode, environment);
-                case Kind.CallExpression:
-                    return Expressions.EvaluateCallExpression((CallExpression)astNode, environment);
-                case Kind.MemberExpression:
-                    return Expressions.EvaluateMemberExpression((MemberExpression)astNode, environment);
-                case Kind.AssignmentExpression:
-                    return Expressions.EvaluateAssignmentExpression((AssignmentExpression)astNode, environment);
-                case Kind.ComparisonExpression:
-                    return Expressions.EvaluateComparisonExpression((ComparisonExpression)astNode, environment);
-                case Kind.RangeExpression:
-                    return Expressions.EvaluateRangeExpression((RangeExpression)astNode, environment);
-                case Kind.CastExpression:
-                    return Expressions.EvaluateCastExpression((CastExpression)astNode, environment);
-                case Kind.TernaryExpression:
-                    return Expressions.EvaluateTernaryExpression((TernaryExpression)astNode, environment);
-                case Kind.Varref:
-                    return Expressions.EvaluateVarref((VarrefExpression)astNode, environment);
+                Kind.BinaryExpression => Expressions.EvaluateBinaryExpression((BinaryExpression)astNode, environment),
+                Kind.LogicalExpression => Expressions.EvaluateLogicalExpression((LogicalExpression)astNode, environment),
+                Kind.UnaryRightExpression => Expressions.EvaluateUnaryRightExpression((UnaryRightExpression)astNode, environment),
+                Kind.UnaryExpression => Expressions.EvaluateUnaryExpression((UnaryExpression)astNode, environment),
+                Kind.CallExpression => Expressions.EvaluateCallExpression((CallExpression)astNode, environment),
+                Kind.MemberExpression => Expressions.EvaluateMemberExpression((MemberExpression)astNode, environment),
+                Kind.AssignmentExpression => Expressions.EvaluateAssignmentExpression((AssignmentExpression)astNode, environment),
+                Kind.ComparisonExpression => Expressions.EvaluateComparisonExpression((ComparisonExpression)astNode, environment),
+                Kind.RangeExpression => Expressions.EvaluateRangeExpression((RangeExpression)astNode, environment),
+                Kind.CastExpression => Expressions.EvaluateCastExpression((CastExpression)astNode, environment),
+                Kind.TernaryExpression => Expressions.EvaluateTernaryExpression((TernaryExpression)astNode, environment),
+                Kind.Varref => Expressions.EvaluateVarref((VarrefExpression)astNode, environment),
 
                 // AST node's kind is unknown and cannot be computed
-                default:
-                    throw new Exception($"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}");
-            }
+                _ => throw new Exception($"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}"),
+            };
         }
     }
 }

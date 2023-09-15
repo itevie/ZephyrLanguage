@@ -17,6 +17,7 @@ namespace Zephyr.Parser.AST
 
         ExportStatement,
         VariableDeclaration,
+        EventDeclaration,
         Modifier,
         FunctionDeclaration,
         ReturnStatement,

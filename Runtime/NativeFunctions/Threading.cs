@@ -147,21 +147,22 @@ namespace Zephyr.Runtime.NativeFunctions
 
                     Debug.Log($"Thread function name: {function.Name}", type);
 
-                    Action f = () =>
+                    void f()
                     {
                         try
                         {
                             Debug.Log($"Thread started", type);
                             Runtime.Handlers.Helpers.EvaluateFunctionHelper(function, new List<RuntimeValue>(), environment, expression);
                             Debug.Log($"Thread finished", type);
-                        } catch (Exception err)
+                        }
+                        catch (Exception err)
                         {
                             Console.WriteLine(err.Message + "\nUnrecoverable exception thrown in thread");
                             System.Environment.Exit(0);
                         }
-                    };
+                    }
 
-                    Thread thread = new(new ThreadStart(f));
+                    Thread thread = new(new ThreadStart((Action)f));
                     thread.Start();
 
                     return Helpers.CreateNull();

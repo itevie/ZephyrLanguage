@@ -37,7 +37,30 @@ namespace Zephyr.Runtime.Handlers
             {
                 RuntimeValue val = Helpers.EvaluateFunctionHelper(((FunctionValue)function), arguments, environment, expression);
                 return val;
-            }
+            } else if (function.Type == Values.ValueType.Event)
+            {
+                // Check args
+                if (arguments.Count != 1)
+                {
+                    throw new RuntimeException(new()
+                    {
+                        Error = $"Expected exactly 1 args of type {((EventValue)function).EventType}",
+                        Location = expression.Caller.Location
+                    });
+                }
+
+                if (arguments[0].Type != ((EventValue)function).EventType && ((EventValue)function).EventType != Values.ValueType.Any)
+                {
+                    throw new RuntimeException(new()
+                    {
+                        Error = $"Expected argument 1 to be of type {((EventValue)function).EventType}",
+                        Location = expression.Arguments[0].Location
+                    });
+                }
+
+                ((EventValue)function).ExecuteListeners(arguments[0], environment);
+                return Values.Helpers.Helpers.CreateNull();
+            } else
             {
                 throw new RuntimeException(new()
                 {

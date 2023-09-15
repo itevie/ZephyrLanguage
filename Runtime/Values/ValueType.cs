@@ -39,5 +39,6 @@ namespace Zephyr.Runtime.Values
         // Special
         Any,
         Auto,
+        Event,
     }
 }

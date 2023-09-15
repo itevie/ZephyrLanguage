@@ -50,7 +50,11 @@ namespace Zephyr.Runtime.NativeFunctions
                     if (noColors) return "null";
                     return "null".Pastel(ConsoleColor.Gray);
                 case Values.ValueType.Variable:
+                    if (noColors) return $"<VariableReference {((VariableValue)value).Variable.Name}>";
                     return $"<VariableReference {((VariableValue)value).Variable.Name}>".Pastel(ConsoleColor.Gray);
+                case Values.ValueType.Event:
+                    if (noColors) return $"<Event {((EventValue)value).EventType} {((EventValue)value).EventName}>";
+                    return $"<Event {((EventValue)value).EventType} {((EventValue)value).EventName}>".Pastel(ConsoleColor.Gray);
                 case Values.ValueType.Boolean:
                     BooleanValue bval = (BooleanValue)value;
                     if (bval.Value == true)
