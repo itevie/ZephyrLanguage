@@ -84,6 +84,8 @@ namespace Zephyr.Runtime
                     return Expressions.EvaluateCastExpression((CastExpression)astNode, environment);
                 case Kind.TernaryExpression:
                     return Expressions.EvaluateTernaryExpression((TernaryExpression)astNode, environment);
+                case Kind.Varref:
+                    return Expressions.EvaluateVarref((VarrefExpression)astNode, environment);
 
                 // AST node's kind is unknown and cannot be computed
                 default:

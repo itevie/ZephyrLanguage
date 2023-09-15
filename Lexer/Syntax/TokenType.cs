@@ -30,6 +30,7 @@ namespace Zephyr.Lexer.Syntax
         Catch,
         Import,
         As,
+        Varref,
 
         Modifier,
 

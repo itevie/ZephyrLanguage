@@ -1102,6 +1102,11 @@ namespace Zephyr.Parser
             };
         }
 
+        /// <summary>
+        /// Used for parsing general values, like literals, functions etc.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="ParserException"></exception>
         private AST.Expression ParsePrimaryExpression()
         {
             TokenType token = At().TokenType;
@@ -1115,6 +1120,7 @@ namespace Zephyr.Parser
                         Symbol = identToken.Value,
                         Location = identToken.Location
                     };
+                // Literals - any number
                 case TokenType.Number:
                     Token numberToken = Eat();
                     return new AST.NumericLiteral()
@@ -1123,6 +1129,7 @@ namespace Zephyr.Parser
                         Location = numberToken.Location,
                         IsFloat = numberToken.Value.Contains(".")
                     };
+                // Literals - any negative number
                 case TokenType.BinaryOperator:
                     if (At().Value == Operators.ArithmeticOperators["Subtract"].Symbol)
                     {
@@ -1142,6 +1149,7 @@ namespace Zephyr.Parser
                         Token = At(),
                         Error = $"Unexpected token: {At().TokenType}",
                     });
+                // Literals - string
                 case TokenType.String:
                     Token stringToken = Eat();
                     return new StringLiteral()
@@ -1150,8 +1158,10 @@ namespace Zephyr.Parser
                         Location = stringToken.Location,
                     };
 
+                // Literals - functions
                 case TokenType.Function:
                     return ParseFunctionDeclaration();
+                // Literals - arrays
                 case TokenType.OpenSquare:
                     Token openSquareToken = Eat();
                     List<Expression> arr = new();
@@ -1171,9 +1181,10 @@ namespace Zephyr.Parser
                         Items = arr,
                         Location = openSquareToken.Location
                     };
+                // Literals - objects
                 case TokenType.OpenBrace:
                     return ParseObjectLiteral();
-                   
+                // Parameters, 1 - ( 2 + 2 ) etc.
                 case TokenType.OpenParan:
                     Eat();
 
@@ -1181,6 +1192,23 @@ namespace Zephyr.Parser
                     Expect(TokenType.CloseParan, "Expected close paren");
 
                     return statement;
+                // Variable reference
+                case TokenType.Varref:
+                    Token varrefToken = Eat();
+
+                    // Expect ident.
+                    Token varrefIdentifier = Expect(TokenType.Identifier, "Expected variable name");
+
+                    VarrefExpression varrefExpr = new VarrefExpression()
+                    {
+                        Identifier = new Identifier()
+                        {
+                            Symbol = varrefIdentifier.Value,
+                            Location = varrefIdentifier.Location,
+                        }
+                    };
+
+                    return varrefExpr;
                 case TokenType.Semicolon:
                     throw new ParserException(new()
                     {

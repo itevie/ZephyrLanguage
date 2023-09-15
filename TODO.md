@@ -11,7 +11,9 @@
 	- [ ] Add properties to the Exception class so it can be modified
 	- [ ] Make them more descriptive
 	- [ ] Have an enum full of different error codes
-- [ ] Piping values
+- [ ] Swith statements
+	- [ ] Inline switch statements too
+- [ ] Piping values (1 >> add(2) >> mul(3) = 9) == mul(add(1, 2), 3)
 - [ ] Immutable keyword
 	- [ ] Add the keyword
 	- [ ] Make native functions listen to it
@@ -23,7 +25,24 @@
 	- [ ] Find out what a decorator is
 - [ ] Cloning of objects and arrays without reference function
 - [ ] Template strings
-- [ ] Array indexing, without needing .at()
+- [ ] Indexing
+	- [ ] Array indexing
+	- [ ] Object indexing
+	- [ ] Custom iterator on objects, perhaps add Symbols like [Symbol.Iterator]
 - [ ] Delete keyword
 - [ ] Extending type functions
 - [ ] Completely re-do type system
+- [ ] Filename resolver, like node.js + C# combined: a.txt + ./a.txt .\a.txt ../a/a.txt etc.
+- [ ] C# API for using Zephyr as an embedded script
+- [ ] When loading NonDefaultPackages use zpehyr:package-name instead of whaatever it is now
+- [ ] Hoisted variables
+	- [ ] Add and parse variable
+	- [ ] Add scope types to the environments, e.g. type = function
+	- [ ] When used, make the environment find the closest function scope
+- [ ] varref function, returns a refernecne to a VARIABLE no a VALUE
+	- [ ] varref must be a operator cause native functions don't get VARIABLES
+	- [ ] Create "VariableValue" value
+- [ ] Documentation Comments
+	- [ ] Parse them in lexer
+	- [ ] Add properties to functions
+	- [ ] Be able to access then with e.g. Function.getDocumentationComments().params.a.description

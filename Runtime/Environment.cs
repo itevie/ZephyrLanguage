@@ -81,7 +81,7 @@ namespace Zephyr.Runtime
             CheckType(value, settings, from);
 
             // Set it
-            _variables[variableName] = new Variable(value, settings);
+            _variables[variableName] = new Variable(value, variableName, settings);
             Verbose.Log($"Declared variable {variableName}", $"environment {from?.Location?.FileName}");
             return value;
         }
@@ -151,6 +151,12 @@ namespace Zephyr.Runtime
         {
             Environment environment = Resolve(variableName, from);
             return environment._variables[variableName].Value;
+        }
+
+        public Variable LookupVariableReturnVariable(string variableName, Expression? from = null)
+        {
+            Environment environment = Resolve(variableName, from);
+            return environment._variables[variableName];
         }
 
         public Variable LookupVariable(string variableName, bool abc, Expression? from = null)

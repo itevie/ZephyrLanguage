@@ -46,5 +46,6 @@ namespace Zephyr.Parser.AST
         BinaryExpression,
         StringLiteral,
         ArrayLiteral,
+        Varref,
     }
 }

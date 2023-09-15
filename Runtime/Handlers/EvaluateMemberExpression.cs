@@ -40,6 +40,9 @@ namespace Zephyr.Runtime.Handlers
                 case Values.ValueType.Float:
                     type = "Float";
                     break;
+                case Values.ValueType.Variable:
+                    type = "Variable";
+                    break;
             }
 
             // If it is an object do something special

@@ -49,6 +49,8 @@ namespace Zephyr.Runtime.NativeFunctions
                 case Values.ValueType.Null:
                     if (noColors) return "null";
                     return "null".Pastel(ConsoleColor.Gray);
+                case Values.ValueType.Variable:
+                    return $"<VariableReference {((VariableValue)value).Variable.Name}>".Pastel(ConsoleColor.Gray);
                 case Values.ValueType.Boolean:
                     BooleanValue bval = (BooleanValue)value;
                     if (bval.Value == true)

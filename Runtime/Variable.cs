@@ -10,11 +10,13 @@ namespace Zephyr.Runtime
     {
         public Values.RuntimeValue Value;
         public VariableSettings Options;
+        public string Name;
 
-        public Variable(Values.RuntimeValue value, VariableSettings? settings = null)
+        public Variable(Values.RuntimeValue value, string name = "Unkown!", VariableSettings? settings = null)
         {
             Value = value;
             Options = settings ?? new VariableSettings();
+            Name = name;
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Zephyr.Runtime.Values
         Double,
 
         // Internal
+        Variable,
         Number,
         NumberNotFloat,
 
