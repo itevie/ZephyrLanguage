@@ -19,7 +19,7 @@ namespace Zephyr.Runtime.Handlers
         public static RuntimeValue EvaluateImportStatement(ImportStatement statement, Environment environment)
         {
             string toImport = ((StringLiteral)statement.ToImport).Value;
-            bool isNative = toImport.StartsWith("@");
+            bool isNative = toImport.StartsWith("zephyr:");
 
             // Check for package
             if (toImport.StartsWith("./") == false && !isNative)
@@ -36,7 +36,7 @@ namespace Zephyr.Runtime.Handlers
                         Error = $"Cannot find the package {toImport}"
                     });
                 }
-            } else 
+            } else if (!isNative)
             {
                 toImport = Path.Combine(environment.Directory, toImport.Replace("./", ""));
             }
@@ -55,7 +55,7 @@ namespace Zephyr.Runtime.Handlers
                 {
                     // Get the package value
                     NonDefaultPackage? pkg = (NonDefaultPackage?)fieldInfo.GetValue(fieldInfo?.DeclaringType);
-                    if (pkg != null && pkg.Name == toImport.Replace("@", ""))
+                    if (pkg != null && pkg.Name == toImport.Replace("zephyr:", ""))
                     {
                         package = pkg;
                     }

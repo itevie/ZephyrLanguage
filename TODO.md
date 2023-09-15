@@ -36,7 +36,7 @@
 - [ ] Completely re-do type system
 - [ ] Filename resolver, like node.js + C# combined: a.txt + ./a.txt .\a.txt ../a/a.txt etc.
 - [ ] C# API for using Zephyr as an embedded script
-- [ ] When loading NonDefaultPackages use zpehyr:package-name instead of whaatever it is now
+- [x] When loading NonDefaultPackages use zpehyr:package-name instead of whaatever it is now
 - [ ] Hoisted variables
 	- [ ] Add and parse variable
 	- [ ] Add scope types to the environments, e.g. type = function
