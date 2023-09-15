@@ -39,9 +39,9 @@
 	- [ ] Add and parse variable
 	- [ ] Add scope types to the environments, e.g. type = function
 	- [ ] When used, make the environment find the closest function scope
-- [ ] varref function, returns a refernecne to a VARIABLE no a VALUE
-	- [ ] varref must be a operator cause native functions don't get VARIABLES
-	- [ ] Create "VariableValue" value
+- [x] varref function, returns a refernecne to a VARIABLE no a VALUE
+	- [x] varref must be a operator cause native functions don't get VARIABLES
+	- [x] Create "VariableValue" value
 - [ ] Documentation Comments
 	- [ ] Parse them in lexer
 	- [ ] Add properties to functions
