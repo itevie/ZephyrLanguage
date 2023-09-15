@@ -19,7 +19,7 @@
 	- [ ] Make native functions listen to it
 	- [ ] Dissallow edited values, return a new value instead
 - [ ] Add LINQ-type package
-- [ ] Break keyword
+- [x] Break keyword
 - [ ] Continue keyword
 - [ ] Assign to objects
 - [ ] Python-like inexing like str[:3] or something
