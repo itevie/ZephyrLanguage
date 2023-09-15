@@ -22,6 +22,8 @@ namespace Zephyr.Lexer.Syntax
         Function,
         Struct,
         Return,
+        Break,
+        Continue,
         If,
         While,
         For,

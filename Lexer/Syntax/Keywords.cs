@@ -25,6 +25,8 @@ namespace Zephyr.Lexer.Syntax
             { "import", TokenType.Import },
             { "as", TokenType.As },
             { "varref", TokenType.Varref },
+            { "break", TokenType.Break },
+            { "continue", TokenType.Continue },
         };
 
         public static Dictionary<string, Runtime.Values.ValueType> Types = new()

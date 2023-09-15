@@ -140,6 +140,12 @@ namespace Zephyr.Parser
                     return ParseImportStatement();
                 case TokenType.Export:
                     return ParseExportStatement();
+                // Keywords with no extra info
+                case TokenType.Break:
+                    return new BreakStatement()
+                    {
+                        Location = Eat().Location
+                    };
                 default:
                     return ParseStatement();
             }

@@ -24,6 +24,11 @@ namespace Zephyr.Runtime.Values
         public bool IsReturn = false;
 
         /// <summary>
+        /// Whether or continue or break was used
+        /// </summary>
+        public bool WasBroken = false;
+
+        /// <summary>
         /// The location of the value - this is unreliable
         /// </summary>
         public Location? Location { get; set; } = null;

@@ -31,7 +31,25 @@ namespace Zephyr.Runtime.Handlers
                     });
                 }
 
-                Interpreter.Evaluate(statement.Body, environment);
+                // Create new env for this
+                Environment env = new Environment(environment);
+                env.DeclareVariable("~break", Values.Helpers.Helpers.CreateNull(), new()
+                {
+                    IsConstant = true,
+                    Modifiers = new()
+                    {
+                        Modifier.Final
+                    }
+                });
+
+                Interpreter.Evaluate(statement.Body, env);
+
+                // Check if broken
+                if (env._variables["~break"].Value.Type == Values.ValueType.Boolean)
+                {
+                    break;
+                }
+
                 test = Interpreter.Evaluate(statement.Test, environment);
             }
 

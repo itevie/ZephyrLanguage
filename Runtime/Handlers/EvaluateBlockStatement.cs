@@ -21,8 +21,8 @@ namespace Zephyr.Runtime.Handlers
             {
                 result = Interpreter.Evaluate(statement, scope);
 
-                // Check if return
-                if (result.IsReturn)
+                // Check if block-breaking
+                if (result.IsReturn || result.WasBroken)
                 {
                     return result;
                 }

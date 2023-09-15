@@ -21,6 +21,8 @@
 - [ ] Add LINQ-type package
 - [ ] Break keyword
 - [ ] Continue keyword
+- [ ] Assign to objects
+- [ ] Python-like inexing like str[:3] or something
 - [ ] Decorators
 	- [ ] Find out what a decorator is
 - [ ] Cloning of objects and arrays without reference function
@@ -46,3 +48,9 @@
 	- [ ] Parse them in lexer
 	- [ ] Add properties to functions
 	- [ ] Be able to access then with e.g. Function.getDocumentationComments().params.a.description
+- [ ] Add classes
+	- [ ] Create syntax for classes, make it good
+	- [ ] Create public and private keywords for fields
+	- [ ] Static fields
+	- [ ] Add \_\_str\_\_ like python, method for converting the class into a string
+	- [ ] Getters and setters

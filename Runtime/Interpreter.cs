@@ -38,6 +38,8 @@ namespace Zephyr.Runtime
                     return Statements.EvaluateFunctionDeclaration((FunctionDeclaration)astNode, environment);
                 case Kind.ReturnStatement:
                     return Statements.EvaluateRuntimeStatment((ReturnStatement)astNode, environment);
+                case Kind.BreakStatement:
+                    return Statements.EvaluateBreakStatement((BreakStatement)astNode, environment);
                 case Kind.WhileStatement:
                     return Statements.EvaluateWhileStatement((WhileStatement)astNode, environment);
                 case Kind.ImportStatement:
