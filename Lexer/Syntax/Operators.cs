@@ -34,6 +34,7 @@ namespace Zephyr.Lexer.Syntax
         {
             { "Concat", new Operator("~", TokenType.BinaryOperator) },
             { "Coalesence", new Operator("??", TokenType.BinaryOperator) },
+            { "Pipe", new Operator(">>", TokenType.Pipe) },
         };
 
         // Syntax sugar

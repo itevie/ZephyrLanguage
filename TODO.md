@@ -13,7 +13,7 @@
 	- [ ] Have an enum full of different error codes
 - [ ] Swith statements
 	- [ ] Inline switch statements too
-- [ ] Piping values (1 >> add(2) >> mul(3) = 9) == mul(add(1, 2), 3)
+- [x] Piping values (1 >> add(2) >> mul(3) = 9) == mul(add(1, 2), 3)
 - [ ] Immutable keyword
 	- [ ] Add the keyword
 	- [ ] Make native functions listen to it

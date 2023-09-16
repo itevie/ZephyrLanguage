@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Zephyr.Parser;
 using Zephyr.Parser.AST;
+using Zephyr.Parser.AST.Expressions;
 using Zephyr.Runtime.Handlers;
 
 namespace Zephyr.Runtime
@@ -60,6 +61,7 @@ namespace Zephyr.Runtime
                 Kind.CastExpression => Expressions.EvaluateCastExpression((CastExpression)astNode, environment),
                 Kind.TernaryExpression => Expressions.EvaluateTernaryExpression((TernaryExpression)astNode, environment),
                 Kind.Varref => Expressions.EvaluateVarref((VarrefExpression)astNode, environment),
+                Kind.PipeExpression => Expressions.EvaluatePipeExpression((PipeExpression)astNode, environment),
 
                 // AST node's kind is unknown and cannot be computed
                 _ => throw new Exception($"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}"),

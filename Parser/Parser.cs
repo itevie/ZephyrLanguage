@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Zephyr.Lexer;
 using Zephyr.Lexer.Syntax;
 using Zephyr.Parser.AST;
+using Zephyr.Parser.AST.Expressions;
 
 namespace Zephyr.Parser
 {
@@ -575,17 +576,18 @@ namespace Zephyr.Parser
             // Parse parameters
             Expect(TokenType.OpenParan);
 
-            List<TypeIdentifierCombo> typeIdentifiers = new();
+            /*List<TypeIdentifierCombo> typeIdentifiers = new();
 
             while (At().TokenType != TokenType.CloseParan)
             {
                 TypeIdentifierCombo combo = ParseName();
                 typeIdentifiers.Add(combo);
-            }
+            }*/
+            List<Expression> parameters = ParseArgumentsList();
 
             Expect(TokenType.CloseParan);
 
-            List<Expression> parameters = new();
+            /*List<Expression> parameters = new();
 
             foreach (TypeIdentifierCombo paran in typeIdentifiers)
             {
@@ -593,7 +595,7 @@ namespace Zephyr.Parser
                 {
                     Symbol = paran.Identifier.Symbol
                 });
-            }
+            }*/
 
             Expression body = ParseBlock();
 
@@ -656,7 +658,7 @@ namespace Zephyr.Parser
             }
 
             // Expect identifier now
-            identifier = Expect(TokenType.Identifier, "Expected ifentifier");
+            identifier = Expect(TokenType.Identifier, "Expected identifier");
 
             Identifier ident = new()
             {
@@ -694,7 +696,55 @@ namespace Zephyr.Parser
          */
         private Expression ParseExpression()
         {
-            return ParseAssignmentExpression();
+            return ParsePipeExpression();
+        }
+
+        private Expression ParsePipeExpression()
+        {
+            Expression left = ParseAssignmentExpression();
+
+            if (At().TokenType == TokenType.Pipe)
+            {
+                PipeExpression finished = new PipeExpression()
+                {
+                    Left = left
+                };
+
+                while (At().TokenType == TokenType.Pipe)
+                {
+                    Token pipeToken = Eat();
+
+                    // Expect call expression cause it can only be a funcion
+                    Expression rightExpr = ParseCallMemberExpression();
+
+                    // Check type
+                    if (rightExpr.Kind != Kind.CallExpression && rightExpr.Kind != Kind.MemberExpression && rightExpr.Kind != Kind.Identifier)
+                    {
+                        throw new ParserException(new()
+                        {
+                            Error = $"Expected call, member or identifier here, got {rightExpr.Kind}",
+                            Location = rightExpr.Location
+                        });
+                    }
+
+                    // Modify
+                    if (At().TokenType == TokenType.Pipe)
+                    {
+                        finished.Left = new PipeExpression()
+                        {
+                            Left = finished.Left,
+                            Right = rightExpr
+                        };
+                    } else
+                    {
+                        finished.Right = rightExpr;
+                    }
+                }
+
+                return finished;
+            }
+
+            return left;
         }
 
         private Expression ParseAssignmentExpression()

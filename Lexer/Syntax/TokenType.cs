@@ -47,6 +47,7 @@ namespace Zephyr.Lexer.Syntax
         QuestionMark,
         ForEachIn,
         Cast,
+        Pipe,
         EOF,
 
         // Operators

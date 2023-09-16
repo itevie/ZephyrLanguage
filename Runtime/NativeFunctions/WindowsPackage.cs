@@ -37,37 +37,10 @@ namespace Zephyr.Runtime.NativeFunctions
                 show = Helpers.CreateNativeFunction((args, env, expr) =>
                 {
                     // Get values
-                    RuntimeValue? bodyVal = args.ElementAtOrDefault(0);
-                    RuntimeValue? titleVal = args.ElementAtOrDefault(1);
-                    RuntimeValue? iconVal = args.ElementAtOrDefault(2);
-                    RuntimeValue? buttonsVal = args.ElementAtOrDefault(3);
-
-                    // Check types
-                    if (bodyVal != null && bodyVal?.Type != Values.ValueType.String)
-                        throw new RuntimeException(new()
-                        {
-                            Location = Handlers.Helpers.GetLocation(bodyVal?.Location, expr?.Location),
-                            Error = $"Argument 1 must be of type string"
-                        });
-                    if (titleVal != null && titleVal?.Type != Values.ValueType.String)
-                        throw new RuntimeException(new()
-                        {
-                            Location = Handlers.Helpers.GetLocation(titleVal?.Location, expr?.Location),
-                            Error = $"Argument 2 must be of type string"
-                        });
-                    if (iconVal != null && iconVal?.Type != Values.ValueType.Int)
-                        throw new RuntimeException(new()
-                        {
-                            Location = Handlers.Helpers.GetLocation(iconVal?.Location, expr?.Location),
-                            Error = $"Argument 3 must be of type integer"
-                        });
-
-                    if (buttonsVal != null && buttonsVal?.Type != Values.ValueType.Int)
-                        throw new RuntimeException(new()
-                        {
-                            Location = Handlers.Helpers.GetLocation(buttonsVal?.Location, expr?.Location),
-                            Error = $"Argument 4 must be of type integer"
-                        });
+                    RuntimeValue bodyVal = args[0];
+                    RuntimeValue titleVal = args[1];
+                    RuntimeValue iconVal = args[2];
+                    RuntimeValue buttonsVal = args[3];
 
                     string? body = ((StringValue?)bodyVal ?? null)?.Value ?? "";
                     string? title = ((StringValue?)titleVal ?? null)?.Value ?? "";
@@ -76,6 +49,32 @@ namespace Zephyr.Runtime.NativeFunctions
 
                     int result = MessageBox((IntPtr)0, body ?? "", title ?? "", icon + buttons);
                     return Helpers.CreateInteger(result);
+                }, options: new()
+                {
+                    Name = "show",
+                    Parameters =
+                    {
+                        new()
+                        {
+                            Name = "body",
+                            Type = Values.ValueType.String
+                        },
+                        new()
+                        {
+                            Name = "title",
+                            Type = Values.ValueType.String
+                        },
+                        new()
+                        {
+                            Name = "icon",
+                            Type = Values.ValueType.Int
+                        },
+                        new()
+                        {
+                            Name = "buttons",
+                            Type = Values.ValueType.Int
+                        }
+                    }
                 }),
 
                 icons = new

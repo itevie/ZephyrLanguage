@@ -41,6 +41,7 @@ namespace Zephyr.Parser.AST
         RangeExpression,
         CastExpression,
         TernaryExpression,
+        PipeExpression,
 
         Property,
         ObjectLiteral,
