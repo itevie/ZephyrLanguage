@@ -69,7 +69,7 @@ namespace Zephyr
                        .WithParsed<CommandLineOptions>(o =>
                        {
                            Options = o;
-                           string? fileName = o?.FileName == null ? o?.FileNameFlag : o?.FileName;
+                           string? fileName = o?.FileNameFlag ?? o?.FileName ?? null;
                            if (fileName != null)
                            {
                                EntryPoint = new FileInfo(fileName).Directory.FullName;
