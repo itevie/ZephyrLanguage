@@ -34,6 +34,9 @@ namespace Zephyr.Lexer.Syntax
         Import,
         As,
         Varref,
+        Switch,
+        Case,
+        Passthrough,
 
         Modifier,
 

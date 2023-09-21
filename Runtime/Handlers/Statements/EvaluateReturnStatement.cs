@@ -22,11 +22,11 @@ namespace Zephyr.Runtime.Handlers
             }
             catch
             {
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = statement.Location,
-                    Error = "Cannot return here"
-                });
+                    ErrorCode = Errors.ErrorCode.CannotReturnHere
+                };
             }
 
             return value;

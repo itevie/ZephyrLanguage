@@ -20,11 +20,11 @@ namespace Zephyr.Runtime.Handlers
 
             RuntimeException generateError(string error)
             {
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = from?.Location,
                     Error = error,
-                });
+                };
             }
 
             // Numbers only
@@ -118,7 +118,11 @@ namespace Zephyr.Runtime.Handlers
                     case Values.ValueType.String:
                         // Expect same type
                         if (right.Type != Values.ValueType.String)
-                            throw generateError($"Can only {visualOperator} a string to another string, got {fullOperation}");
+                        {
+                            // Try convert to string
+                            return CastValueHelper(right, left.Type, from?.Location);
+                            //throw generateError($"Can only {visualOperator} a string to another string, got {fullOperation}");
+                        }
                         return Values.Helpers.Helpers.CreateString(((StringValue)left).Value + ((StringValue)right).Value);
                     case Values.ValueType.Array:
                         ArrayValue arrValue = (ArrayValue)left;

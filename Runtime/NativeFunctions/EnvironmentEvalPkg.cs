@@ -29,7 +29,7 @@ namespace Zephyr.Runtime.NativeFunctions
 
         public static ObjectValue EnvironmentEvalCreater()
         {
-            Environment environment = new(Runner.FileExecutor.GlobalEnvironment);
+            Environment environment = new();
 
             return Helpers.CreateObject(new
             {

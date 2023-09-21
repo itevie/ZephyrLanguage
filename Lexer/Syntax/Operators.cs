@@ -30,7 +30,7 @@ namespace Zephyr.Lexer.Syntax
         };
 
         // Other binary operators
-        public static Dictionary<string, Operator> BinaryOperators = new()
+        public static Dictionary<string, Operator> BinaryOperators = new()  
         {
             { "Concat", new Operator("~", TokenType.BinaryOperator) },
             { "Coalesence", new Operator("??", TokenType.BinaryOperator) },

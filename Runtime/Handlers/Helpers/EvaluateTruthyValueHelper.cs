@@ -20,7 +20,11 @@ namespace Zephyr.Runtime.Handlers
                 Values.ValueType.String => ((StringValue)value).Value != "",
                 Values.ValueType.Null => false,
                 Values.ValueType.NativeFunction => true,
-                _ => throw new Exception($"Cannot evaluate truthy or falsy on type {value.Type}"),
+                _ => throw new RuntimeException_new()
+                {
+                    Location = value.Location,
+                    Error = $"Cannot execute truthy-falsy converter on type {value}"
+                }
             };
         }
     }

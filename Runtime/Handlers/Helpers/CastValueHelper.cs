@@ -78,11 +78,11 @@ namespace Zephyr.Runtime.Handlers
             }
 
             // By now, it has not succeeded
-            throw new RuntimeException(new()
+            throw new RuntimeException_new()
             {
                 Location = loc,
                 Error = $"Cannot cast {value.Type} -> {newType}"
-            });
+            };
         }
     }
 }

@@ -16,6 +16,9 @@ namespace Zephyr
         [Value(0, HelpText = "The Zephyr code file to execute")]
         public string? FileName { get; set; } = null;
 
+        [Option('d', "cwd", HelpText = "The directory Zephyr should run in")]
+        public string? CurrentWorkingDirectory { get; set; } = null;
+
         [Option('p', "pipe", HelpText = "The file path to pipe the output to")]
         public string? Pipe { get; set; } = null;
 
@@ -31,7 +34,7 @@ namespace Zephyr
         [Option("no-iteration-limit", HelpText = "Whether or not the loop iteration limit should be disabled", Default = false)]
         public bool NoIterationLimit { get; set; } = false;
 
-        [Option('a', "file-access", HelpText = "The file permissions the program has access to.\nr = read, w = write, d = delete file, x = delete directory, c = create, n = none\nExample: --file-access=rwdc, -a=n", Default = "rwdxc")]
+        [Option("file-access", HelpText = "The file permissions the program has access to.\nr = read, w = write, d = delete file, x = delete directory, c = create, n = none\nExample: --file-access=rwdc, -a=n", Default = "rwdxc")]
         public string FileAccessFlags { get; set; } = "rwdxc";
 
         [Option("system-details", HelpText = "Whether or not the program has access to system details, e.g. username, operating system etc.", Default = true)]
@@ -63,8 +66,8 @@ namespace Zephyr
         [Value(0, HelpText = "The version of the package", Default = "@latest")]
         public string PackageVersion { get; set; } = "@latest";
 
-        [Option('r', "repository", HelpText = "The repository URL from which to download the packages", Default = PackageManager.DefaultRepository)]
-        public string RepositoryUrl { get; set; } = PackageManager.DefaultRepository;
+        [Option('r', "repository", HelpText = "The repository URL from which to download the packages", Default = PackageManager.RepositoryClient.DefaultRepository)]
+        public string RepositoryUrl { get; set; } = PackageManager.RepositoryClient.DefaultRepository;
     }
 
     [Verb("new", HelpText = "Initiate a new Zephyr project / package")]
@@ -82,15 +85,15 @@ namespace Zephyr
         [Value(1, HelpText = "The password of the user to register", Required = true)]
         public string Password { get; set; } = "";
 
-        [Option('r', "repository", HelpText = "The repository URL to register to", Default = PackageManager.DefaultRepository)]
-        public string RepositoryUrl { get; set; } = PackageManager.DefaultRepository;
+        [Option('r', "repository", HelpText = "The repository URL to register to", Default = PackageManager.RepositoryClient.DefaultRepository)]
+        public string RepositoryUrl { get; set; } = PackageManager.RepositoryClient.DefaultRepository;
     }
 
     [Verb("upload-package", HelpText = "Uploads the package in the current directory to the repository")]
     internal class CommandLineOptionsUploadPackage
     {
-        [Option('r', "repository", HelpText = "The repository URL to upload to", Default = PackageManager.DefaultRepository)]
-        public string RepositoryUrl { get; set; } = PackageManager.DefaultRepository;
+        [Option('r', "repository", HelpText = "The repository URL to upload to", Default = PackageManager.RepositoryClient.DefaultRepository)]
+        public string RepositoryUrl { get; set; } = PackageManager.RepositoryClient.DefaultRepository;
 
         [Option('u', "username", HelpText = "The username of the user", Required = true)]
         public string Username { get; set; } = "";

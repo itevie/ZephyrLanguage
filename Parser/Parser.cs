@@ -1,4 +1,5 @@
-﻿using Spectre.Console.Rendering;
+﻿using CommandLine;
+using Spectre.Console.Rendering;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlTypes;
@@ -10,6 +11,8 @@ using Zephyr.Lexer;
 using Zephyr.Lexer.Syntax;
 using Zephyr.Parser.AST;
 using Zephyr.Parser.AST.Expressions;
+using Zephyr.Parser.AST.Statements;
+using Zephyr.Runtime.Handlers;
 
 namespace Zephyr.Parser
 {
@@ -57,11 +60,12 @@ namespace Zephyr.Parser
             // Check if correct type
             if (previous == null || previous.TokenType != type)
             {
-                throw new ParserException(new()
+                throw new ParserException_new()
                 {
                     Token = previous,
+                    ErrorCode = Errors.ErrorCode.GenericUnexpectedToken,
                     Error = $"Unexpected {previous?.TokenType}, " + (error != "" ? error : $" expected {type}")
-                });
+                };
             }
 
             return previous;
@@ -109,7 +113,16 @@ namespace Zephyr.Parser
 
                 // Check if require semicolon
                 if (NeedSemiColon(value))
-                    Expect(TokenType.Semicolon, $"Expected semi colon after statement");
+                {
+                    if (At().TokenType != TokenType.Semicolon)
+                    {
+                        throw new ParserException_new()
+                        {
+                            ErrorCode = Errors.ErrorCode.MissingSemiColon,
+                            Token = At(),
+                        };
+                    }
+                }
 
                 program.Body.Add(value);
             }
@@ -136,6 +149,7 @@ namespace Zephyr.Parser
                 TokenType.Struct => ParseStructStatement(),
                 TokenType.Import => ParseImportStatement(),
                 TokenType.Export => ParseExportStatement(),
+                TokenType.Switch => ParseSwitchStatement(),
                 // Keywords with no extra info
                 TokenType.Break => new BreakStatement()
                 {
@@ -155,6 +169,76 @@ namespace Zephyr.Parser
             {
                 TokenType.Function => ParseFunctionDeclaration(),
                 _ => ParseExpression(),
+            };
+        }
+
+        /// <summary>
+        /// This switch is when it is used as a statement, like an if statement
+        /// </summary>
+        /// <returns></returns>
+        private Expression ParseSwitchStatement()
+        {
+            Token switchToken = Eat();
+
+            Expression test = ParseExpression();
+
+            // Expect opening body
+            Expect(TokenType.OpenBrace);
+
+            List<SwitchCase> cases = new();
+
+            while (At().TokenType == TokenType.Case)
+            {
+                // Expect "case"
+                Token caseToken = Expect(TokenType.Case);
+
+                // Expect test
+                Expression caseTest = ParseExpression();
+
+                // Expect:
+                Expect(TokenType.Colon);
+
+                BlockStatement body = new();
+
+                do
+                {
+                    // Get value
+                    Expression expr = ParseControlFlowStatement();
+
+                    // Check if require semicolon
+                    if (NeedSemiColon(expr))
+                    {
+                        if (At().TokenType != TokenType.Semicolon)
+                        {
+                            throw new ParserException_new()
+                            {
+                                ErrorCode = Errors.ErrorCode.MissingSemiColon,
+                                Token = At(),
+                            };
+                        }
+                    }
+
+                    Eat();
+
+                    body.Body.Add(expr);
+                } while (At().TokenType != TokenType.Case && At().TokenType != TokenType.CloseBrace);
+
+                cases.Add(new SwitchCase()
+                {
+                    Test = caseTest,
+                    Success = body,
+                    Location = caseToken.Location
+                });
+            }
+
+            // Expect closing body
+            Expect(TokenType.CloseBrace);
+
+            return new SwitchStatement()
+            {
+                Cases = cases,
+                Test = test,
+                Location = switchToken.Location
             };
         }
 
@@ -211,11 +295,11 @@ namespace Zephyr.Parser
 
             if (identifier.Kind != Kind.StringLiteral)
             {
-                throw new ParserException(new()
+                throw new ParserException_new()
                 {
                     Location = identifier.Location,
-                    Error = "Expected string here"
-                });
+                    ErrorCode = Errors.ErrorCode.MissingdImportStatementIdentifier,
+                };
             }
 
             // Check for as
@@ -229,11 +313,11 @@ namespace Zephyr.Parser
                 // Check type
                 if (importAs.Kind != Kind.Identifier)
                 {
-                    throw new ParserException(new()
+                    throw new ParserException_new()
                     {
                         Location = importAs.Location,
                         Error = "Expected identifier here"
-                    });
+                    };
                 }
             }
 
@@ -325,11 +409,11 @@ namespace Zephyr.Parser
                 // Check already contains
                 if (modifiers.Contains(mod))
                 {
-                    throw new ParserException(new()
+                    throw new ParserException_new()
                     {
                         Token = modifierToken,
-                        Error = $"The declaration already has this modifier"
-                    });
+                        ErrorCode = Errors.ErrorCode.ModifierAlreadyUsed
+                    };
                 }
 
                 modifiers.Add(mod);
@@ -350,11 +434,11 @@ namespace Zephyr.Parser
                 // Check if trying to create const without valie
                 if (isConstant)
                 {
-                    throw new ParserException(new()
+                    throw new ParserException_new()
                     {
                         Token = variableDeclarationToken,
-                        Error = "Must assign a value to a const variable at declaration"
-                    });
+                        ErrorCode = Errors.ErrorCode.UnassignedConstantVariable
+                    };
                 }
 
                 // Create
@@ -574,8 +658,6 @@ namespace Zephyr.Parser
             }
 
             // Parse parameters
-            Expect(TokenType.OpenParan);
-
             /*List<TypeIdentifierCombo> typeIdentifiers = new();
 
             while (At().TokenType != TokenType.CloseParan)
@@ -583,10 +665,7 @@ namespace Zephyr.Parser
                 TypeIdentifierCombo combo = ParseName();
                 typeIdentifiers.Add(combo);
             }*/
-            List<Expression> parameters = ParseArgumentsList();
-
-            Expect(TokenType.CloseParan);
-
+            List<Expression> parameters = ParseArguments();
             /*List<Expression> parameters = new();
 
             foreach (TypeIdentifierCombo paran in typeIdentifiers)
@@ -1034,21 +1113,31 @@ namespace Zephyr.Parser
             return left;
         }*/
 
-        private Expression ParseCallMemberExpression(bool noStart = false)
+        private Expression ParseCallMemberExpression(bool noStart = false, Expression? setObj = null)
         {
-            Expression member = ParseMemberExpression(noStart);
+            Expression member = ParseMemberExpression(noStart, setObj);
 
             if (At().TokenType == TokenType.OpenParan)
             {
-                return ParseCallExpression(member);
+                Expression expr = ParseCallExpression(member);
+
+                // Check for trailing dots
+                if (At().TokenType == TokenType.Dot)
+                {
+                    Expression expr2 = ParseCallMemberExpression(false, setObj = expr);
+                    return expr2;
+                } else
+                {
+                    return expr;
+                }
             }
 
             return member;
         }
 
-        private Expression ParseMemberExpression(bool skipObj = false)
+        private Expression ParseMemberExpression(bool skipObj = false, Expression? setObj = null)
         {
-            Expression obj = skipObj == false ? ParsePrimaryExpression() : new();
+            Expression obj = skipObj == false ? setObj != null ? setObj : ParsePrimaryExpression() : new();
 
             Location? fullLocation = obj.Location;
 

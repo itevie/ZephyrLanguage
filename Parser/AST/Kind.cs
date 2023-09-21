@@ -15,6 +15,7 @@ namespace Zephyr.Parser.AST
 
         Program,
 
+        // Statements
         ExportStatement,
         VariableDeclaration,
         EventDeclaration,
@@ -29,7 +30,9 @@ namespace Zephyr.Parser.AST
         ForEachStatement,
         TryStatement,
         ImportStatement,
+        SwitchStatement,
 
+        // Expression
         AssignmentExpression,
         MemberExpression,
         CallExpression,
@@ -43,6 +46,7 @@ namespace Zephyr.Parser.AST
         TernaryExpression,
         PipeExpression,
 
+        // Literals
         Property,
         ObjectLiteral,
         NumericLiteral,
@@ -51,5 +55,8 @@ namespace Zephyr.Parser.AST
         StringLiteral,
         ArrayLiteral,
         Varref,
+
+        // Other
+        SwitchCase,
     }
 }

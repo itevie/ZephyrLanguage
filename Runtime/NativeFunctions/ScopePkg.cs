@@ -44,7 +44,22 @@ namespace Zephyr.Runtime.NativeFunctions
                 return obj;
             }, options: new()
             {
-                Name = "getVariable"
+                Name = "getObject"
+            }),
+
+            getGlobalObject = Helpers.CreateNativeFunction((args, env, expr) =>
+            {
+                ObjectValue obj = new();
+
+                foreach (KeyValuePair<string, Variable> pair in env.GetGlobalEnvironment()._variables)
+                {
+                    obj.Properties.Add(pair.Key, pair.Value.Value);
+                }
+
+                return obj;
+            }, options: new()
+            {
+                Name = "getGlobalObject"
             })
         });
     }

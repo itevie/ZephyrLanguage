@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Linq.Expressions;
 using System.Text;
 using Zephyr.Runtime;
 using Zephyr.Runtime.Values;
@@ -12,8 +13,47 @@ namespace Zephyr.Runner
     {
         Runtime.Environment environment = new();
 
+        public void SetupEnv()
+        {
+            void createNew(string name, Func<List<RuntimeValue>, Runtime.Environment, Parser.AST.Expression?, RuntimeValue> f)
+            {
+                environment.DeclareVariable(name, Runtime.Values.Helpers.Helpers.CreateNativeFunction(f, name = "REPL::" + name), new()
+                {
+                    IsConstant = true,
+                    Modifiers = new()
+                    {
+                        Modifier.Final
+                    },
+                    Origin = "REPL",
+                });
+            }
+
+            createNew("exit", (args, env, expr) =>
+            {
+                System.Environment.Exit(0);
+                return Runtime.Values.Helpers.Helpers.CreateNull();
+            });
+
+            createNew("flush", (args, env, expr) =>
+            {
+                environment = new();
+                SetupEnv();
+                return Runtime.Values.Helpers.Helpers.CreateNull();
+            });
+
+            createNew("help", (args, env, expr) =>
+            {
+                Console.WriteLine("----- REPL help -----");
+                Console.WriteLine(" exit() - Exit repl mode (or CTRL+C)");
+                Console.WriteLine(" flush() - Sets up a new environment");
+                Console.WriteLine(" help() - Shows this");
+                return Runtime.Values.Helpers.Helpers.CreateNull();
+            });
+        }
+
         public void Start()
         {
+            SetupEnv();
             environment.Directory = Program.EntryPoint;
             while (true)
             {
@@ -93,6 +133,9 @@ namespace Zephyr.Runner
                 catch (ZephyrException e)
                 {
                     Console.WriteLine(e.Message);
+                } catch (ZephyrException_new e)
+                {
+                    Console.WriteLine(e.Visualise());
                 }
             }
         }

@@ -12,6 +12,8 @@ namespace Zephyr.Runtime.NativeFunctions
     {
         public static NonDefaultPackage OsPkg = new("System", new
         {
+            tempDirectory = Path.GetTempPath(),
+            OSName = RuntimeInformation.OSDescription,
             getOSName = Helpers.CreateNativeFunction((args, env, expr) =>
             {
                 string type = "";

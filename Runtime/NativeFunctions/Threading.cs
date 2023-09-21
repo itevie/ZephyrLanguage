@@ -38,7 +38,8 @@ namespace Zephyr.Runtime.NativeFunctions
                         Name = "milliseconds",
                         Type = Values.ValueType.Int
                     },
-                }
+                },
+                Description = "Pauses the current thread for X amount of milliseconds"
             }),
 
             threads = new
@@ -57,7 +58,8 @@ namespace Zephyr.Runtime.NativeFunctions
                             Name = "threadsFunction",
                             Type = Values.ValueType.Function
                         },
-                    }
+                    },
+                    Description = "Creates a new thread object which can then be started"
                 }),
 
                 waitAll = Helpers.CreateNativeFunction((args, env, expr) =>
@@ -125,7 +127,8 @@ namespace Zephyr.Runtime.NativeFunctions
                 {
                     Name = "waitAll",
                     UncheckedParameters = true,
-                    AllParamsOfType = Values.ValueType.Function
+                    AllParamsOfType = Values.ValueType.Function,
+                    Description = "Executes every function in the parameters as a new thread simultaneously, waits for execution and returns the output as an array"
                 }),
             }
         });

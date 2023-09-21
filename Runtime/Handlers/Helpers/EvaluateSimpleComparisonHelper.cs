@@ -19,11 +19,11 @@ namespace Zephyr.Runtime.Handlers
 
             RuntimeException generateError(string error)
             {
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = from?.Location,
                     Error = error
-                });
+                };
             }
 
             // These can work on any types

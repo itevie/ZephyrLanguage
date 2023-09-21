@@ -72,12 +72,12 @@ namespace Zephyr.Runtime.Handlers
                     // Check parameters - amount
                     if (func.Options.Parameters.Count != args.Count)
                     {
-                        throw new RuntimeException(new()
+                        throw new RuntimeException_new()
                         {
-                            Location = Helpers.GetLocation(from?.Location, func.Location),
+                            Location = GetLocation(from?.Location, func.Location),
                             Error = $"Function {func.Name} expects {func.Options.Parameters.Count} paremters but recieved {args.Count}",
                             Reference = func
-                        });
+                        };
                     }
 
                     // Check parameters - types

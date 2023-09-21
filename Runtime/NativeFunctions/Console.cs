@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Zephyr.Runtime.Values;
 using Zephyr.Runtime.Values.Helpers;
 using System.Text.RegularExpressions;
+using System.Runtime.InteropServices;
 
 namespace Zephyr.Runtime.NativeFunctions
 {
@@ -15,7 +16,7 @@ namespace Zephyr.Runtime.NativeFunctions
         {
             clear = Helpers.CreateNativeFunction((args, environment, expr) =>
             {
-                Console.Clear();    
+                Console.Clear();
                 return Helpers.CreateNull();
             }, options: new()
             {
@@ -100,6 +101,56 @@ namespace Zephyr.Runtime.NativeFunctions
             {
                 Name = "readKey"
             }),
+
+            beep = Helpers.CreateNativeFunction((args, env, expr) =>
+            {
+                Console.Beep();
+                return Helpers.CreateNull();
+            }, options: new()
+            {
+                Name = "beep"
+            }),
+
+            beepWithFrq = Helpers.CreateNativeFunction((args, env, expr) =>
+            {
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    Console.Beep(((IntegerValue)args[0]).Value, ((IntegerValue)args[1]).Value);
+                } else
+                {
+                    throw new RuntimeException_new()
+                    {
+                        Error = "This functions is windows-only",
+                        Location = expr?.Location
+                    };
+                }
+                return Helpers.CreateNull();
+            }, options: new()
+            {
+                Name = "beep",
+                Parameters =
+                {
+                    new()
+                    {
+                        Name = "frequency",
+                        Type = Values.ValueType.Int
+                    },
+                    new()
+                    {
+                        Name = "duration",
+                        Type = Values.ValueType.Int
+                    }
+                }
+            }),
+
+            /* GETTERS */
+            getTitle = Helpers.CreateNativeFunction((args, env, expr) =>
+            {
+                return Helpers.CreateString(Console.Title);
+            }, options: new()
+            {
+                Name = "getTtle"
+            })
         });
     }
 }

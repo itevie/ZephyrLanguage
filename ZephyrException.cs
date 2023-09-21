@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Zephyr.Lexer;
@@ -18,6 +19,15 @@ namespace Zephyr
 
     internal class ZephyrException : Exception
     {
+        public Expression? Expression { get; set; } = null;
+        public Token? Token { get; set; } = null;
+        public Location? Location { get; set; } = null;
+        public RuntimeValue? Reference { get; set; } = null;
+        public Errors.ErrorType? ErrorType { get; set; } = null;
+        public Errors.ErrorCode ErrorCode { get; set; } = Errors.ErrorCode.Generic;
+        public Exception? MoreDetails { get; set; } = null;
+        public string Error = "";
+
         public ZephyrException(ZephyrExceptionOptions options) : base(GenerateExceptionText(options))
         {
 

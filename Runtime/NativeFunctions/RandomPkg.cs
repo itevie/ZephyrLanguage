@@ -27,7 +27,8 @@ namespace Zephyr.Runtime.NativeFunctions
                         Name = "arr",
                         Type = Values.ValueType.Array
                     },
-                }
+                },
+                Description = "Picks a random element from a given array"
             }),
         });
     }

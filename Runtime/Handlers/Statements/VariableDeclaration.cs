@@ -26,11 +26,13 @@ namespace Zephyr.Runtime.Handlers
                 value = Helpers.CastValueHelper(value, declaration.Type, Helpers.GetLocation(declaration.Value.Location));
 
             value.Modifiers = declaration.Modifiers;
+            value.DeclaredAt = declaration;
 
             return environment.DeclareVariable(declaration.Identifier.Symbol, value, new VariableSettings()
             {
                 IsConstant = declaration.IsConstant,
                 Type = declaration.Type,
+                DeclaredAt = declaration,
                 IsNullable = declaration.IsTypeNullable,
             }, Helpers.GetLocation(declaration.Identifier, declaration, declaration.Value));
         }

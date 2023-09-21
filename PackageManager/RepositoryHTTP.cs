@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr
+namespace Zephyr.PackageManager
 {
     internal class RepositoryHTTP
     {

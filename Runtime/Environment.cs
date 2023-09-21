@@ -34,6 +34,7 @@ namespace Zephyr.Runtime
         public Dictionary<string, RuntimeValue> ExportedVariables = new();
         public string Directory = "";
 
+
         public Environment(Environment? parent = null)
         {
             _parent = parent;
@@ -47,11 +48,12 @@ namespace Zephyr.Runtime
         {
             // Check if variable already exists
             if (_variables.ContainsKey(variableName))
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = from?.Location,
-                    Error = $"Cannot declare variable {variableName} because it already exists"
-                });
+                    DeclaredAt = LookupVariable(variableName).DeclaredAt,
+                    ErrorCode = Errors.ErrorCode.VariableAlreadyExists,
+                };
 
             bool exists = false;
 
@@ -71,11 +73,12 @@ namespace Zephyr.Runtime
             
             if (exists == true && variableName.StartsWith("~") == false)
             {
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = from?.Location,
-                    Error = $"Cannot declare variable {variableName} because it already exists"
-                });
+                    DeclaredAt = LookupVariable(variableName).DeclaredAt,
+                    ErrorCode = Errors.ErrorCode.VariableAlreadyExists,
+                };
             }
 
             CheckType(value, settings, from);
@@ -126,11 +129,12 @@ namespace Zephyr.Runtime
             // Check if it is constant
             if (variable.Options.IsConstant && force == false)
             {
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = from?.Location,
-                    Error = "Cannot assign to a constant variable"
-                });
+                    ErrorCode = Errors.ErrorCode.AssignmentToConstantVariable,
+                    DeclaredAt = variable.Options.DeclaredAt
+                };
             }
 
             CheckType(value, variable.Options, from);
@@ -181,6 +185,16 @@ namespace Zephyr.Runtime
 
             // Try resolve in parent
             return _parent.Resolve(variableName, from);
+        }
+
+        public Environment GetGlobalEnvironment()
+        {
+            if (this._parent != null)
+            {
+                return this._parent.GetGlobalEnvironment();
+            }
+
+            return this;
         }
 
         private void LoadGlobalVariables()
@@ -282,18 +296,19 @@ namespace Zephyr.Runtime
                 {
                     // Check null
                     if (value.Type == Values.ValueType.Null && settings.IsNullable == false)
-                        throw new RuntimeException(new()
+                        throw new RuntimeException_new()
                         {
                             Location = from?.Location,
-                            Error = "Cannot assign Null to a non-nullable variable"
-                        });
+                            Error = "Cannot assign Null to a non-nullable variable",
+                            ErrorCode = Errors.ErrorCode.NullAssignment
+                        };
                     else if (value.Type != Values.ValueType.Null)
                     {
-                        throw new RuntimeException(new()
+                        throw new RuntimeException_new()
                         {
                             Location = from?.Location,
                             Error = $"Cannot assign type {value.Type} to a variable of type {settings.Type}"
-                        });
+                        };
                     }
                 }
             }

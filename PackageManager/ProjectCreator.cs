@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr
+namespace Zephyr.PackageManager
 {
     internal class ProjectCreator
     {
@@ -40,14 +40,10 @@ namespace Zephyr
 
             ZephyrPackage package = new();
             package.Name = projectName;
-            package.Dependencies.Add("is_null", new()
-            {
-                Version = "1.0.0"
-            });
 
             string json = JsonConvert.SerializeObject(package, Formatting.Indented);
 
-            File.WriteAllText(Path.Combine(dir, "package.json"), json);
+            File.WriteAllText(Path.Combine(dir, Config.PackageManagerFileName), json);
             File.Create(Path.Combine(dir, "index.zr"));
 
             Console.WriteLine($"Project created!");

@@ -5,7 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
 
-namespace Zephyr
+namespace Zephyr.PackageManager
 {
     internal class ZephyrPackage
     {

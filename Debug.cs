@@ -7,6 +7,14 @@ using System.Threading.Tasks;
 
 namespace Zephyr
 {
+    internal class Logger
+    {
+        public static void Warning(string message, string type = "")
+        {
+            Console.WriteLine($"[Warning:{type}] {message}".Pastel(ConsoleColor.Yellow).PastelBg(ConsoleColor.Gray));
+        }
+    }
+
     internal class Debug
     {
         public static void Log(string message, string type = "")

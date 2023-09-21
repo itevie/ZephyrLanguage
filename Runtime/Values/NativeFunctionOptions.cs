@@ -10,6 +10,8 @@ namespace Zephyr.Runtime.Values
     {
         public string PermissionsNeeded { get; set; } = "";
         public string Name = "unknown";
+        public string? Description { get; set; } = "";
+
         public List<NativeFunctionParameter> Parameters { get; set; } = new List<NativeFunctionParameter>();
 
         public bool UncheckedParameters { get; set; } = false;

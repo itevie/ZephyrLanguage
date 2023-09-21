@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Zephyr.Parser.AST;
 
 namespace Zephyr.Runtime
 {
@@ -13,5 +14,6 @@ namespace Zephyr.Runtime
         public bool IsNullable { get; set; } = false;
         public string? Origin { get; set; } = null;
         public List<Values.Modifier> Modifiers { get; set; } = new();
+        public Expression? DeclaredAt { get; set; } = null;
     }
 }

@@ -15,18 +15,23 @@ using System.Reflection;
 using System.Text;
 using System.Diagnostics;
 using Zephyr.Runtime.NativeFunctions;
+using System.Runtime.CompilerServices;
+using NetCoreAudio;
 
 namespace Zephyr
 {
     internal class Program
     {
         public static CommandLineOptions Options { get; set; } = new CommandLineOptions();
-        public static Dictionary<string, ZephyrLoadedPackage> LoadedPackages = new();
+        public static Dictionary<string, PackageManager.ZephyrLoadedPackage> LoadedPackages = new();
         public static string EntryPoint = Directory.GetCurrentDirectory();
         public static List<string> ZephyrArgs = new List<string>();
 
         public static string PipeOutput { get; set; } = "";
 
+        /// <summary>
+        /// Ran once the Zephyr progeam has finished executing  
+        /// </summary>
         public static void Finish()
         {
             if (Options.Pipe != null)
@@ -75,16 +80,22 @@ namespace Zephyr
                                EntryPoint = new FileInfo(fileName).Directory.FullName;
                            }
 
+                           // Check for specified CWD
+                           if (o.CurrentWorkingDirectory != null)
+                           {
+                               EntryPoint = Path.GetFullPath(o.CurrentWorkingDirectory);
+                           }
+
                            Debug.Log($"Entry point is {EntryPoint}");
 
-                           LoadPackages();
+                           PackageManager.PackageLoader.LoadPackages();
 
                            // Load packages
 
                            if (fileName == null || fileName == "repl")
                            {
                                // If filename is null, run REPL
-                               Console.WriteLine($"Running in REPL mode");
+                               Console.WriteLine($"Running in REPL mode - type help() for help");
 
                                Repl repl = new();
                                repl.Start();
@@ -135,22 +146,18 @@ namespace Zephyr
                                done = true;
                            }
                        })
-                       .WithParsed<CommandLineOptionsInstallPackage>(o =>
-                       {
-                           Console.WriteLine($"Install {o?.PackageName}");
-                       })
                        .WithParsed<CommandLineOptionsCreatePackage>(o =>
                        {
-                           ProjectCreator.CreateNewProject();
+                           PackageManager.ProjectCreator.CreateNewProject();
                        }).WithParsed<CommandLineOptionsInstallPackage>(o =>
                        {
-                           PackageManager.InstallPackage(o.PackageName, o.PackageVersion, new Uri(o.RepositoryUrl));
+                           PackageManager.RepositoryClient.InstallPackage(o.PackageName, o.PackageVersion, new Uri(o.RepositoryUrl));
                        }).WithParsed<CommandLineOptionsRegisterUser>(o =>
                        {
                            AccountManagement.Register(o.Username, o.Password, o.RepositoryUrl);
                        }).WithParsed<CommandLineOptionsUploadPackage>(o =>
                        {
-                           PackageManager.UploadPackage(new Uri(o.RepositoryUrl), o.Username, o.Password); 
+                           PackageManager.RepositoryClient.UploadPackage(new Uri(o.RepositoryUrl), o.Username, o.Password); 
                        }).WithParsed<CommandLineOptionsDocumentation>(o =>
                        {
                            Console.WriteLine($"The current Zephyr documentation is on GitHub:\nhttps://github.com/itevie/ZephyrLanguage/wiki");
@@ -164,69 +171,6 @@ namespace Zephyr
             }
         }
 
-        static void LoadPackages()
-        {
-            // Check for package.json
-            if (File.Exists(Path.Join(EntryPoint, "package.json")))
-            {
-                ZephyrPackage? package = JsonConvert.DeserializeObject<ZephyrPackage>(File.ReadAllText(Path.Combine(EntryPoint, "package.json")));
-
-                if (package != null)
-                {
-                    Debug.Log($"Loading package references...");
-
-                    // Check for zephyr_packages folder
-                    if (!Directory.Exists(Path.Combine(EntryPoint, "zephyr_packages")))
-                    {
-                        Debug.Warning($"Cannot load packages as there is no zephyr_packages folder ({Path.Combine(EntryPoint, "zephyr_packages")})", "load-package-references");
-                        return;
-                    }
-
-                    // Read all dependencies
-                    foreach (KeyValuePair<string, ZephyrPackageDependency> dep in package.Dependencies)
-                    {
-                        Debug.Log($"Loading package {dep.Key}...");
-
-                        ZephyrLoadedPackage? loadedPackage = null;
-
-                        // Find package
-                        foreach (string dir in Directory.EnumerateDirectories(Path.Combine(EntryPoint, "zephyr_packages")))
-                        {
-                            // Try read package.json
-                            if (File.Exists(Path.Combine(dir, "package.json")))
-                            {
-                                // Read it
-                                ZephyrPackage? pkg = JsonConvert.DeserializeObject<ZephyrPackage>(File.ReadAllText(Path.Combine(dir, "package.json")));
-
-                                if (pkg != null && pkg.Name == dep.Key)
-                                {
-                                    // Check for entry point
-                                    if (pkg.EntryPoint != "")
-                                    {
-                                        // Check if entry point exists
-                                        if (File.Exists(Path.Combine(dir, pkg.EntryPoint)))
-                                        {
-                                            // Load it
-                                            loadedPackage = new ZephyrLoadedPackage(Path.Combine(dir, pkg.EntryPoint));
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Check if it was null
-                        if (loadedPackage == null)
-                        {
-                            Debug.Warning($"Failed to load package {dep.Key}");
-                            continue;
-                        }
-
-                        // Add to packages
-                        LoadedPackages.Add(dep.Key, loadedPackage);
-                        Debug.Log($"Loaded package reference {dep.Key} successfully!");
-                    }
-                }
-            }
-        }
+        
     }
 }

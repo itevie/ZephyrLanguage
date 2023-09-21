@@ -22,7 +22,7 @@ namespace Zephyr
         /// <param name="repositoryUrl">The repository to register to</param>
         public static void Register(string username, string password, string repositoryUrl)
         {
-            RepositoryHTTP.Post($"{repositoryUrl}/users/register", new
+            PackageManager.RepositoryHTTP.Post($"{repositoryUrl}/users/register", new
             {
                 username,
                 password

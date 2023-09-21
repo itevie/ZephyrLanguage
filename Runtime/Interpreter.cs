@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Zephyr.Parser;
@@ -64,7 +65,11 @@ namespace Zephyr.Runtime
                 Kind.PipeExpression => Expressions.EvaluatePipeExpression((PipeExpression)astNode, environment),
 
                 // AST node's kind is unknown and cannot be computed
-                _ => throw new Exception($"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}"),
+                _ => throw new RuntimeException_new()
+                {
+                    Error = $"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}",
+                    Location = astNode.Location
+                }
             };
         }
     }

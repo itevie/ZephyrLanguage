@@ -65,7 +65,28 @@ namespace Zephyr.Runtime.Handlers
 
             if (type != null)
             {
-                NativeFunction func = Helpers.GetTypeFunction(type, ((Identifier)expression.Property).Symbol, environment, Helpers.GetLocation(obj.Location, Helpers.GetLocation(obj.Location, expression.Location)));
+                string ident = "";
+
+                if (expression.IsComputed)
+                {
+                    RuntimeValue tempIdent = Interpreter.Evaluate(expression.Property, environment);
+
+                    if (tempIdent.Type != Values.ValueType.String)
+                    {
+                        throw new RuntimeException_new()
+                        {
+                            Location = expression.Property.Location,
+                            Error = "Expected string as computed property"
+                        };
+                    }
+
+                    ident = ((StringValue)tempIdent).Value;
+                } else
+                {
+                    ident = ((Identifier)expression.Property).Symbol;
+                }
+
+                NativeFunction func = Helpers.GetTypeFunction(type, ident, environment, Helpers.GetLocation(obj.Location, Helpers.GetLocation(obj.Location, expression.Location)));
                 func.IsTypeCall = true;
                 func.TypeCallValue = obj;
                 return func;

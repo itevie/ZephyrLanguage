@@ -9,9 +9,9 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr
+namespace Zephyr.PackageManager
 {
-    internal class PackageManager
+    internal class RepositoryClient
     {
         public const string DefaultRepository = "https://zephyrrepository.itevie.repl.co";
 
@@ -90,14 +90,14 @@ namespace Zephyr
             Directory.Delete(packageTempFolder, true);
 
             // Update package.json
-            Console.WriteLine($"Updating package.json");
+            Console.WriteLine($"Updating {Config.PackageManagerFileName}");
             package.Package.Dependencies.Add(packageName, new()
             {
                 Version = packageVersion
             });
 
             // Save
-            File.WriteAllText(Path.Combine(package.Location, "package.json"), JsonConvert.SerializeObject(package.Package, Formatting.Indented));
+            File.WriteAllText(Path.Combine(package.Location, Config.PackageManagerFileName), JsonConvert.SerializeObject(package.Package, Formatting.Indented));
             Console.WriteLine($"Done in {stopwatch.ElapsedMilliseconds}ms!");
         }
 
@@ -173,14 +173,14 @@ namespace Zephyr
 
         public static ZephyrPackageWithLocation GetZephyrPackage()
         {
-            Console.WriteLine($"Finding package.json in closest directory...");
+            Console.WriteLine($"Finding {Config.PackageManagerFileName} in closest directory...");
 
             string currentDirectory = Directory.GetCurrentDirectory();
 
             // Check for package.json
-            if (File.Exists(Path.Combine(currentDirectory, "package.json")) == false)
+            if (File.Exists(Path.Combine(currentDirectory, Config.PackageManagerFileName)) == false)
             {
-                Console.WriteLine($"Error: File package.json not found! try zephyr new or zephyr init".Pastel(ConsoleColor.Red));
+                Console.WriteLine($"Error: File {Config.PackageManagerFileName} not found! try zephyr new or zephyr init".Pastel(ConsoleColor.Red));
                 Environment.Exit(0);
             }
 
@@ -195,7 +195,7 @@ namespace Zephyr
             Console.WriteLine($"Folder is {currentDirectory}");
 
             // Read package.json
-            string packageJson = File.ReadAllText(Path.Combine(currentDirectory, "package.json"));
+            string packageJson = File.ReadAllText(Path.Combine(currentDirectory, Config.PackageManagerFileName));
 
             ZephyrPackageWithLocation pack = new();
 
@@ -203,7 +203,7 @@ namespace Zephyr
 
             if (package == null)
             {
-                Console.WriteLine($"Error: Failed to read package.json! Check for any errors".Pastel(ConsoleColor.Red));
+                Console.WriteLine($"Error: Failed to read {Config.PackageManagerFileName}! Check for any errors".Pastel(ConsoleColor.Red));
                 Environment.Exit(0);
             }
 

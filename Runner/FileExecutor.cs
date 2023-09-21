@@ -42,6 +42,9 @@ namespace Zephyr.Runner
             {
                 Console.WriteLine(e.Message);
                 Program.PipeOutput += e.Message + "\n";
+            } catch (ZephyrException_new e)
+            {
+                Console.WriteLine(e.Visualise());
             }
         }
     }

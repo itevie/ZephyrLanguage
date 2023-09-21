@@ -19,11 +19,11 @@ namespace Zephyr.Runtime.Handlers
                 // Check if parameter is the function nane
                 if (((Identifier)parameter).Symbol == ((Identifier?)declaration?.Name)?.Symbol)
                 {
-                    throw new RuntimeException(new()
+                    throw new RuntimeException_new()
                     {
                         Location = Helpers.GetLocation(parameter.Location, declaration.Location),
                         Error = $"Cannot define a parameter with the same name as the declared function"
-                    });
+                    };
                 }
 
                 parameters.Add(((Identifier)parameter).Symbol);
@@ -36,6 +36,8 @@ namespace Zephyr.Runtime.Handlers
                 DeclarationEnvironment = environment,
                 Body = declaration.Body,
             };
+
+            func.Location = declaration.Location;
 
             return environment.DeclareVariable(func.Name, func, new VariableSettings(), declaration);
         }

@@ -174,11 +174,11 @@ namespace Zephyr.Lexer
 
                     if (wasClosed == false)
                     {
-                        throw new LexerException(new()
+                        throw new LexerException_new()
                         {
                             Location = location,
                             Error = $"Unterminated string"
-                        });
+                        };
                     }
 
                     setToken(value, TokenType.String);
@@ -229,11 +229,11 @@ namespace Zephyr.Lexer
 
                         if (floatUsed == true && isNumberAfterFloat == false)
                         {
-                            throw new LexerException(new()
+                            throw new LexerException_new()
                             {
                                 Location = location,
                                 Error = $"Invalid decimal"
-                            });
+                            };
                         }
 
                         setToken(number, TokenType.Number);
@@ -304,11 +304,11 @@ namespace Zephyr.Lexer
                     // Unrecognised
                     else
                     {
-                        throw new LexerException(new()
+                        throw new LexerException_new()
                         {
                             Location = location,
                             Error = $"Unrecognised character found in source: {src[0]}"
-                        });
+                        };
                     }
                 }
 

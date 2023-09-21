@@ -46,11 +46,11 @@ namespace Zephyr.Runtime.Handlers
             // No type function was found
             else
             {
-                throw new RuntimeException(new()
+                throw new RuntimeException_new()
                 {
                     Location = loc,
                     Error = $"{type} type does not contain this"
-                });
+                };
             }
 
             // Re-construct the native function

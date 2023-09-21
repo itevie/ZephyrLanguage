@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr
+namespace Zephyr.PackageManager
 {
     internal class ZephyrPackageDependency
     {

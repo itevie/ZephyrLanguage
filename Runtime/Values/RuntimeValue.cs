@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using Zephyr.Lexer;
@@ -37,6 +38,8 @@ namespace Zephyr.Runtime.Values
         /// The list of modifiers this value has
         /// </summary>
         public List<Modifier> Modifiers { get; set; } = new();
+
+        public Zephyr.Parser.AST.Expression? DeclaredAt { get; set; } = null;
 
         /// <summary>
         /// Checks whether or not the value has the final modifier
