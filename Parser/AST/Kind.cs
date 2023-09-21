@@ -23,6 +23,7 @@ namespace Zephyr.Parser.AST
         FunctionDeclaration,
         ReturnStatement,
         BreakStatement,
+        PassthroughStatement,
         ContinueStatement,
         IfStatement,
         BlockStatement,

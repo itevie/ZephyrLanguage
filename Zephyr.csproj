@@ -31,6 +31,10 @@
     <PackageReference Include="Websocket.Client" Version="4.6.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Runtime\ZephyrFunctions\" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <RuntimeIdentifiers>win10-x64;linux-x64</RuntimeIdentifiers>

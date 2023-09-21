@@ -80,7 +80,8 @@ namespace Zephyr.Parser
         {
             if (value.Kind == Kind.FunctionDeclaration || value.Kind == Kind.ObjectLiteral || 
                 value.Kind == Kind.IfStatement || value.Kind == Kind.WhileStatement ||
-                value.Kind == Kind.ForEachStatement || value.Kind == Kind.TryStatement)
+                value.Kind == Kind.ForEachStatement || value.Kind == Kind.TryStatement ||
+                value.Kind == Kind.SwitchStatement)
                 return false;
             return true;
         }
@@ -155,6 +156,10 @@ namespace Zephyr.Parser
                 {
                     Location = Eat().Location
                 },
+                TokenType.Passthrough => new PassthroughStatement()
+                {
+                    Location = Eat().Location
+                },
                 _ => ParseStatement(),
             };
         }
@@ -187,13 +192,24 @@ namespace Zephyr.Parser
 
             List<SwitchCase> cases = new();
 
-            while (At().TokenType == TokenType.Case)
+            while (At().TokenType == TokenType.Case || At().TokenType == TokenType.Default)
             {
-                // Expect "case"
-                Token caseToken = Expect(TokenType.Case);
+                Token caseToken;
+                Expression caseTest = new Expression();
+                bool isDefault = false;
 
-                // Expect test
-                Expression caseTest = ParseExpression();
+                if (At().TokenType == TokenType.Case)
+                {
+                    // Expect "case"
+                    caseToken = Expect(TokenType.Case);
+
+                    // Expect test
+                    caseTest = ParseExpression();
+                } else
+                {
+                    caseToken = Expect(TokenType.Default);
+                    isDefault = true;
+                }
 
                 // Expect:
                 Expect(TokenType.Colon);
@@ -221,13 +237,14 @@ namespace Zephyr.Parser
                     Eat();
 
                     body.Body.Add(expr);
-                } while (At().TokenType != TokenType.Case && At().TokenType != TokenType.CloseBrace);
+                } while (At().TokenType != TokenType.Case && At().TokenType != TokenType.CloseBrace && At().TokenType != TokenType.Default);
 
                 cases.Add(new SwitchCase()
                 {
                     Test = caseTest,
                     Success = body,
-                    Location = caseToken.Location
+                    Location = caseToken.Location,
+                    IsDefault = isDefault
                 });
             }
 
@@ -651,10 +668,21 @@ namespace Zephyr.Parser
             Token functionKeywordToken = Eat();
 
             Expression? functionNameToken = null;
-
-            if (At().TokenType == TokenType.Identifier)
+            TypeExpression returnType = new TypeExpression()
             {
-                functionNameToken = ParsePrimaryExpression();
+                IsNullable = true,
+                Type = Runtime.Values.ValueType.Any
+            };
+
+            if (At().TokenType != TokenType.OpenParan)
+            {
+                TypeIdentifierCombo combo = ParseName();
+                functionNameToken = combo.Identifier;
+                returnType = new TypeExpression()
+                {
+                    IsNullable = combo.isNullable,
+                    Type = combo.Type
+                };
             }
 
             // Parse parameters
@@ -683,7 +711,8 @@ namespace Zephyr.Parser
                 Name = functionNameToken,
                 Parameters = parameters,
                 Body = body,
-                Location = functionKeywordToken.Location
+                Location = functionKeywordToken.Location,
+                ReturnType = returnType
             };
         }
 
@@ -710,6 +739,23 @@ namespace Zephyr.Parser
             {
                 Body = body,
             };
+        }
+
+        private TypeExpression ParseType()
+        {
+            TypeExpression expr = new TypeExpression();
+
+            // Get the type
+            expr.Type = (Runtime.Values.ValueType)int.Parse(Expect(TokenType.Type).Value);
+
+            // Check if nullable
+            if (At().TokenType == TokenType.QuestionMark)
+            {
+                Eat();
+                expr.IsNullable = true;
+            }
+
+            return expr;
         }
 
         /// <summary>

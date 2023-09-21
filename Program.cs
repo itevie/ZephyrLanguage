@@ -80,6 +80,8 @@ namespace Zephyr
                                EntryPoint = new FileInfo(fileName).Directory.FullName;
                            }
 
+                           Verbose.Log($"C# AppContext is {AppContext.BaseDirectory}");
+
                            // Check for specified CWD
                            if (o.CurrentWorkingDirectory != null)
                            {

@@ -10,6 +10,7 @@ namespace Zephyr.Parser.AST.Expressions
     {
         public Expression Test { get; set; } = new();
         public Expression Success { get; set; } = new();
+        public bool IsDefault { get; set; } = false;
 
         public SwitchCase()
         {

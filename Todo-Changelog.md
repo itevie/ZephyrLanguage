@@ -1,13 +1,63 @@
 # List of all things that I should do
 
-## Easy stuff
+## Stuff to do with packages
+- [ ] Time & Date packages
+- [ ] Add LINQ-type package
+- [ ] Expand math module
+	- [ ] ceil
+	- [ ] abs
+	- [ ] floor
+	- [ ] factorial
+	- [ ] trunc
+	- [ ] sqrt
+	- [ ] cos
+	- [ ] sin
+	- [ ] tan
+	- [ ] tan2
+	- [ ] pi
+- [ ] Add environment variables to Process (like node's process.env)
+- [ ] Path module
+	- [ ] Get absolute path for something
+	- [ ] Combine paths
+- [ ] Expand file module
+	- [ ] statistics
+	- [ ] Open file for later editing (.open()) maybe
+- [ ] More array types functions
+	- [ ] Array.all(x => b);
+- [ ] Spawning processes like node child_process
+	- [ ] Be able to create a process object
+	- [ ] Events will be on it, for example, `event string stdout`, `event string stderr` `event void exit` etc.
+	- [ ] STDIN too
+	- [ ] Then be able to execute it with `process.execute()` or something
+	- [ ] Be able to provide args with `process.addArguments()` or something
+	- [ ] Be able to set environment variables
+	- [ ] Be able to set other things like cwd
+	- [ ] Be able to add optional args
+	- [x] Simpler version which just is `Process.executeFile()`
+	- [x] Make it so the SpawnProcesses thing has to be enabled
+- [ ] Cloning of objects and arrays without reference function
+- [ ] Be able to parse integers, Integer.parse
+- [ ] Expand random package
+- [ ] CSV parser
+- [ ] YML parser
+- [ ] XML parser
+- [ ] Put colors somewhere for like either console.color.red or console.color.red();
+- [ ] CLI parser
+	- [ ] Parses the CLI flags and returns an object
+	- [ ] Allow use for custom verbs
+	- [ ] Global flags
+	- [ ] Defining syntax for a flag
+	- [ ] Short versions of flags
+	- [ ] Types for flags
+	- [ ] Valid values for flags etc.
+- [ ] Improve threading
+	- [ ] Try make it more reliable
+	- [ ] Function to get how many threads are alive
+
+## Syntax
 - [ ] Use `identifier` everywhere for names, not strings
 - [ ] `Loop` keyword - identical to `while true`
 - [ ] `until` keyword - reverse while
-- [ ] Be able to parse integers, Integer.parse
-- [ ] Expand random package
-
-## Everything else
 - [ ] Use `TypeExpression` instead of doing the types in the expression classes
 - [ ] Fix ! breaking stuff, fix it not needing member expressions needing to be in a ()
 - [ ] Be able to modify member expressions
@@ -29,58 +79,37 @@
 		- [ ] Allow types to by optional
 		- [ ] Allow types to be nulled
 		- [ ] Defining it's return type
-- [ ] Access permissions similar to Deno
-	- [ ] Whitelisting directories or files it can read from
-	- [ ] Blacklist directories
-	- [ ] Whitelist URLs it can access
-	- [ ] Blacklist URLs
+		- [ ] Instead of giving an arg, give an object with the variables parameters
 - [ ] Function overloading
-- [ ] Detect and catch recursion errors so it doesn't produce c# stack overflow
-- [ ] Time & Date packages
 - [ ] Global variables
 - [ ] Regex strings
-- [ ] Make errors better
-	- [x] Add properties to the Exception class so it can be modified
-	- [x] Make them more descriptive
-	- [x] Have an enum full of different error codes
-	- [ ] Have converters so its not like MemberExpression it's worded better, not how the class is named
-	- [x] Store entire expressions inside of variables for example VariableDeclaration for where they were defined and errors can read this
-	- [ ] Fully switch to new version
-	- [x] "Defined here" in errors, e.g., cannot assign to constant variable: a (`a = 3`), defined here: `const a = 2`
-- [ ] Swith statements
+- [ ] Enums
+- [ ] Disregard operator (_)
+- [ ] Lambdas
+	- [ ] Decide syntax for a lambda
+	- [ ] Parse them
+	- [ ] Make them work mostly same as a function
+- [x] Swith statements
 	- [ ] Inline switch statements too
 	- [ ] Regex strings match 
 - [ ] Immutable keyword
 	- [ ] Add the keyword
 	- [ ] Make native functions listen to it
 	- [ ] Dissallow edited values, return a new value instead
-- [ ] Add LINQ-type package
 - [ ] Continue keyword
 - [ ] Assign to objects
 - [ ] Python-like inexing like str[:3] or something
-- [ ] Add environment variables to Process (like node's process.env)
-- [ ] Spawning processes like node child_process
-	- [ ] Be able to create a process object
-	- [ ] Events will be on it, for example, `event string stdout`, `event string stderr` `event void exit` etc.
-	- [ ] STDIN too
-	- [ ] Then be able to execute it with `process.execute()` or something
-	- [ ] Be able to provide args with `process.addArguments()` or something
-	- [ ] Be able to set environment variables
-	- [ ] Be able to set other things like cwd
-	- [ ] Simpler version which just is `Process.executeFile()`
-	- [ ] Make it so the SpawnProcesses thing has to be enabled
 - [ ] Decorators
 	- [ ] Find out what a decorator is
-- [ ] Cloning of objects and arrays without reference function
 - [ ] Get around to adding the structs
 - [ ] Template strings
+- [ ] Define multiple variables in one line
 - [ ] Indexing
 	- [ ] Array indexing
 	- [ ] Object indexing
 	- [ ] Custom iterator on objects, perhaps add Symbols like [Symbol.Iterator]
 - [ ] Delete keyword
-- [ ] Filename resolver, like node.js + C# combined: a.txt + ./a.txt .\a.txt ../a/a.txt etc.
-- [ ] C# API for using Zephyr as an embedded script
+- [ ] Directly be able to import .json files
 - [ ] Hoisted variables
 	- [ ] Add and parse variable
 	- [ ] Add scope types to the environments, e.g. type = function
@@ -96,8 +125,47 @@
 	- [ ] Add \_\_str\_\_ like python, method for converting the class into a string
 	- [ ] Getters and setters
 
-## Tasks that are done (changelog)
+## Quality Of Life
+- [ ] Detect and catch recursion errors so it doesn't produce c# stack overflow
+- [ ] Make package manager / register stuff prettier and nicer
+- [ ] Make errors better
+	- [x] Add properties to the Exception class so it can be modified
+	- [x] Make them more descriptive
+	- [x] Have an enum full of different error codes
+	- [ ] Have converters so its not like MemberExpression it's worded better, not how the class is named
+	- [x] Store entire expressions inside of variables for example VariableDeclaration for where they were defined and errors can read this
+	- [ ] Fully switch to new version
+	- [x] "Defined here" in errors, e.g., cannot assign to constant variable: a (`a = 3`), defined here: `const a = 2`
+
+## Everything else
+- [ ] Access permissions similar to Deno
+	- [ ] Whitelisting directories or files it can read from
+	- [ ] Blacklist directories
+	- [ ] Whitelist URLs it can access
+	- [ ] Blacklist URLs
+- [ ] Timers, it repeats function every so often
+- [ ] Util functions
+	- [ ] Solid type checker
+		- [ ] Checks types
+		- [ ] Checks number types "number" accepting all
+		- [ ] Validate any
+- [ ] Filename resolver, like node.js + C# combined: a.txt + ./a.txt .\a.txt ../a/a.txt etc.
+- [ ] C# API for using Zephyr as an embedded script
+- [ ] Fix all namespaces being wrong (some of them are)
+- [ ] Package manger can only upload certain files, and checks what they are
+
+## Advanced stuff
+- [ ] Be able to import .zr files as inbuilt packages (so instead of cs functions it can load .zr files)
+- [ ] API for creating custom C# modules, being able to import them like `import "raylib_bindings.dll"` or something
+- [ ] Code prettifier, makes the code look nicer, preserving it's structure
+- [ ] Code minifier
+- [ ] Namspaces
+
+# Tasks that are done (changelog)
 While yes it could be seen as a changelog, I proably will forget to add everything I do
+*Subtasks are not included - only when entire task is completed*
+
+The dates mean, "these tasks have been completed ON this data or after this date up till the next done point"
 
 ## Done >21/09/23
 - [x] Added parser and AST nodes for switch statement

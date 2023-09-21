@@ -11,6 +11,11 @@ namespace Zephyr.Parser.AST
         public Expression? Name { get; set; } = new Expression();
         public List<Expression> Parameters { get; set; } = new List<Expression>();
         public Expression Body { get; set; } = new Expression();
+        public TypeExpression ReturnType { get; set; } = new TypeExpression()
+        {
+            IsNullable = true,
+            Type = Runtime.Values.ValueType.Any
+        };
 
         public FunctionDeclaration()
         {

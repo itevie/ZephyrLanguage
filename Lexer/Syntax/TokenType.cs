@@ -37,6 +37,7 @@ namespace Zephyr.Lexer.Syntax
         Switch,
         Case,
         Passthrough,
+        Default,
 
         Modifier,
 

@@ -219,7 +219,15 @@ namespace Zephyr.Lexer
                                 break;
 
                             if (src[0] == '.')
-                                floatUsed = true;
+                            {
+                                if (src.Length != 1 && Char.IsDigit(src[1]))
+                                {
+                                    floatUsed = true;
+                                } else
+                                {
+                                    break;
+                                }
+                            }
 
                             if (floatUsed && src[0] != '.')
                                 isNumberAfterFloat = true;

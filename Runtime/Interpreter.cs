@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Zephyr.Parser;
 using Zephyr.Parser.AST;
 using Zephyr.Parser.AST.Expressions;
+using Zephyr.Parser.AST.Statements;
 using Zephyr.Runtime.Handlers;
 
 namespace Zephyr.Runtime
@@ -36,11 +37,13 @@ namespace Zephyr.Runtime
                 Kind.FunctionDeclaration => Statements.EvaluateFunctionDeclaration((FunctionDeclaration)astNode, environment),
                 Kind.ReturnStatement => Statements.EvaluateRuntimeStatment((ReturnStatement)astNode, environment),
                 Kind.BreakStatement => Statements.EvaluateBreakStatement((BreakStatement)astNode, environment),
+                Kind.PassthroughStatement => Statements.EvaluatePassthroughStatement((PassthroughStatement)astNode, environment),
                 Kind.WhileStatement => Statements.EvaluateWhileStatement((WhileStatement)astNode, environment),
                 Kind.ImportStatement => Statements.EvaluateImportStatement((ImportStatement)astNode, environment),
                 Kind.ExportStatement => Statements.EvaluateExportStatement((ExportStatement)astNode, environment),
                 Kind.ForEachStatement => Statements.EvaluateForEachStatement((ForEachStatement)astNode, environment),
                 Kind.TryStatement => Statements.EvaluateTryStatement((TryStatement)astNode, environment),
+                Kind.SwitchStatement => Statements.EvaluateSwitchStatement((SwitchStatement)astNode, environment),
 
                 // Literals
                 Kind.Identifier => Expressions.EvaluateIdentifier((Identifier)astNode, environment),
@@ -64,7 +67,7 @@ namespace Zephyr.Runtime
                 Kind.Varref => Expressions.EvaluateVarref((VarrefExpression)astNode, environment),
                 Kind.PipeExpression => Expressions.EvaluatePipeExpression((PipeExpression)astNode, environment),
 
-                // AST node's kind is unknown and cannot be computed
+                // AST node's kind is unknown (or hasn't beeen implemented yet) and cannot be computed
                 _ => throw new RuntimeException_new()
                 {
                     Error = $"The interpreter cannot handle this ast node because it cannot handle a {astNode.Kind}",

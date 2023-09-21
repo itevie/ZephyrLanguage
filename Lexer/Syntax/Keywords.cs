@@ -18,6 +18,8 @@ namespace Zephyr.Lexer.Syntax
             { "switch", TokenType.Switch },
             { "case", TokenType.Case },
             { "passthrough", TokenType.Passthrough },
+            { "passthru", TokenType.Passthrough },
+            { "default", TokenType.Default },
             { "return", TokenType.Return },
             { "if", TokenType.If },
             { "while", TokenType.While },

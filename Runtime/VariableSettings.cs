@@ -15,5 +15,20 @@ namespace Zephyr.Runtime
         public string? Origin { get; set; } = null;
         public List<Values.Modifier> Modifiers { get; set; } = new();
         public Expression? DeclaredAt { get; set; } = null;
+        public bool ForceDefinition { get; set; } = false;
+    }
+
+    internal class VariableSettingsPresets
+    {
+        public static VariableSettings Secured = new VariableSettings()
+        {
+            IsConstant = true,
+            Modifiers =
+            {
+                Values.Modifier.Final
+            },
+            IsNullable = false,
+            ForceDefinition = true
+        };
     }
 }

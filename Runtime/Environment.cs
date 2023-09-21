@@ -47,7 +47,7 @@ namespace Zephyr.Runtime
         public Values.RuntimeValue DeclareVariable(string variableName, RuntimeValue value, VariableSettings settings, Parser.AST.Expression? from = null)
         {
             // Check if variable already exists
-            if (_variables.ContainsKey(variableName))
+            if (_variables.ContainsKey(variableName) && !settings.ForceDefinition)
                 throw new RuntimeException_new()
                 {
                     Location = from?.Location,
