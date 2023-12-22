@@ -1,90 +1,84 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Zephyr.Lexer.Syntax;
+﻿using System.Xml.Serialization;
+using ZephyrNew.Lexer.Syntax;
 
-namespace Zephyr.Lexer
+namespace ZephyrNew.Lexer
 {
-    internal static class Lexer
+    internal class Lexer
     {
-        private static Dictionary<string, Operator> _operators = Operators.AllOperators;
-        private static Dictionary<string, TokenType> _keywords = Keywords.TheKeywords;
+        public static Dictionary<string, string> AllSources = new Dictionary<string, string>();
 
-        private static Dictionary<string, string> _escapeCharacters = new()
+        private static bool IsSkippable(char what)
         {
-            { "n", "\n" }
-        };
-
-        private static bool LookAhead(string src, string what)
-        {
-            return src.StartsWith(what);
+            return what == ' ' || what == '\t' || what == '\r';
         }
 
-        private static bool IsSkippable(char src)
+        private static bool LookAhead(string source, string what)
         {
-            return src == ' ' || src == '\t' || src == '\r';
+            return source.StartsWith(what);
         }
 
-        /// <summary>
-        /// Converts any given source code into a token list
-        /// </summary>
-        /// <param name="sourceCode">The source code to convert</param>
-        /// <param name="fileName">The file-name the source code belongs to. Only used for locational reasons.</param>
-        /// <returns>The tokenized output</returns>
-        /// <exception cref="Exception"></exception>
-        /// <exception cref="LexerException"></exception>
-        public static List<Token> Tokenize(string sourceCode, string fileName = "")
+        private static bool LookAhead(string source, string what, bool ignoreCase)
         {
-            // Start stopwatch for monitoring how long the lexing took
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
+            return source.StartsWith(what, StringComparison.OrdinalIgnoreCase);
+        }
 
-            List<Token> tokens = new();
-            char[] src = sourceCode.ToCharArray();
+        public static List<Token> Tokenize(string sourceCode, string fileName)
+        {
+            Debug.Log($"Lexing {fileName}", LogType.Lexer);
 
-            int lineIdx = 0;
+            string id = Guid.NewGuid().ToString();
+            AllSources[id] = sourceCode;
+
+            List<Token> tokens = new List<Token>();
+            char[] source = sourceCode.ToCharArray();
+
+            // Current location
+            int lineIndex = 0;
             int currentLine = 0;
 
-            // Loop through all characters of source
-            while (src.Length > 0)
+            // Loop through all the characters of source
+            while (source.Length != 0)
             {
                 string tokenValue = "";
                 TokenType? tokenType = null;
+                string? stringValue = null;
 
-                // Construct base location for others to add onto
-                Location location = new()
+                // Setup the current location
+                Location location = new Location()
                 {
-                    TokenStart = lineIdx,
-                    Source = sourceCode,
+                    TokenStart = lineIndex,
                     Line = currentLine,
-                    FileName = fileName
+                    FileName = fileName,
+                    Source = id,
                 };
 
-                // For removing the first character in the source, returns the removed character
+                // Removes and returns the first character of the source
                 string removeFirst()
                 {
-                    string value = src[0].ToString();
-                    src = src.Skip(1).ToArray();
-                    lineIdx++;
+                    string value = source[0].ToString();
+                    source = source.Skip(1).ToArray();
+                    lineIndex++;
                     return value;
                 }
 
-                // Sets the token instead of having to set it manually
-                void setToken(string val, TokenType tt)
+                void removeMultiple(int amount)
                 {
-                    tokenValue = val;
-                    tokenType = tt;
+                    for (int i = 0; i != amount; i++)
+                        removeFirst();
                 }
 
-                // Comments
-                if (src.Length >= 3 &&  src[0] == '/' && src[1] == '/')
+                void setToken(string val, TokenType type, string? strValue = null)
+                {
+                    tokenValue = val;
+                    tokenType = type;
+                    stringValue = strValue;
+                }
+
+                // ----- Basic Character -----
+                if (source.Length >= 2 && source[0] == '/' && source[1] == '/')
                 {
                     // Repeat until new line
-                    while (src.Length > 0 && src[0] != '\n')
+                    while (source.Length > 0 && source[0] != '\n')
                     {
                         removeFirst();
                     }
@@ -92,255 +86,256 @@ namespace Zephyr.Lexer
                     continue;
                 }
 
-                // Parenthesis
-                else if (src[0] == '(')
-                {
-                    setToken(removeFirst(), TokenType.OpenParan);
-                }
-                else if (src[0] == ')')
-                {
-                    setToken(removeFirst(), TokenType.CloseParan);
-                }
-
-                // Braces
-                else if (src[0] == '{')
-                {
-                    setToken(removeFirst(), TokenType.OpenBrace);
-                }
-                else if (src[0] == '}')
-                {
-                    setToken(removeFirst(), TokenType.CloseBrace);
-                }
-
-                // Square
-                else if (src[0] == '[')
-                {
-                    setToken(removeFirst(), TokenType.OpenSquare);
-                }
-                else if (src[0] == ']')
-                {
-                    setToken(removeFirst(), TokenType.CloseSquare);
-                }
-
-                // Other important syntax
-                else if (src[0] == ';')
-                {
+                else if (source[0] == ';')
                     setToken(removeFirst(), TokenType.Semicolon);
-                }
-                else if (src[0] == ',')
-                {
-                    setToken(removeFirst(), TokenType.Comma);
-                }
-                else if (src[0] == '"')
+
+                else if (IsSkippable(source[0]))
                 {
                     removeFirst();
-                    string value = "";
-                    bool isEscape = false;
-                    bool wasClosed = false;
+                    continue;
+                }
 
-                    while (src.Length > 0)
+                else if (source[0] == '\n')
+                {
+                    removeFirst();
+                    currentLine++;
+                    lineIndex = 0;
+                    continue;
+                }
+
+                // ----- Literals -----
+
+                // String literal
+                else if (
+                    // Check for prefixes
+                    LookAhead(string.Join("", source), Prefixes.VerbatimString.Symbol + "\"", true) ||
+                    source[0] == '"'
+                    )
+                {
+                    Prefix? prefix = null;
+
+                    // Check for verbatim
+                    if (string.Join("", source).StartsWith(Prefixes.VerbatimString.Symbol, StringComparison.OrdinalIgnoreCase))
                     {
-                        // Check for illegal characters
-                        if (src[0] == '\r' || src[0] == '\n')
-                            throw new Exception($"Unexpected new line in string literal");
+                        prefix = Prefixes.VerbatimString;
 
-                        // Check for end quote
-                        if (src[0] == '"' && isEscape == false)
-                        {
+                        // Remove from source
+                        for (int i = 0; i != Prefixes.VerbatimString.Symbol.Length; i++)
                             removeFirst();
+                    }
+
+                    // By now it should be "
+                    if (source[0] != '"')
+                    {
+                        throw new LexerException($"Expected \"", location);
+                    }
+
+                    removeFirst();
+
+                    string value = "";
+                    bool wasClosed = false;
+                    bool wasEscaped = false;
+
+                    while (source.Length > 0)
+                    {
+                        if (wasEscaped)
+                        {
+                            value += removeFirst();
+                            wasEscaped = false;
+                            continue;
+                        }
+
+                        // Check if escaped
+                        if (source[0] == '\\' && prefix != Prefixes.VerbatimString)
+                        {
+                            wasEscaped = true;
+                            value += removeFirst();
+                            continue;
+                        }
+
+                        if (source[0] == '"')
+                        {
                             wasClosed = true;
+                            removeFirst();
                             break;
                         }
 
-                        // Chcek for escape
-                        if (src[0] == '\\' && isEscape == false)
-                        {
-                            removeFirst();
-                            isEscape = true;
-                            continue;
-                        }
+                        if (source[0] == '\n' || source[0] == '\r')
+                            if (prefix != Prefixes.VerbatimString)
+                                throw new LexerException($"Cannot use new line characters in a string", location);
 
-                        if (isEscape == true && _escapeCharacters.ContainsKey(src[0].ToString()))
-                        {
-                            value += _escapeCharacters[src[0].ToString()];
-                            removeFirst();
-                            isEscape = false;
-                            continue;
-                        }
-
-                        isEscape = false;
                         value += removeFirst();
                     }
 
-                    if (wasClosed == false)
+                    if (!wasClosed)
+                        throw new LexerException($"String was not closed", location);
+
+                    // Check if should unescape
+                    try
                     {
-                        throw new LexerException_new()
-                        {
-                            Location = location,
-                            Error = $"Unterminated string"
-                        };
+                        if (prefix != Prefixes.VerbatimString)
+                            value = System.Text.RegularExpressions.Regex.Unescape(value);
+                    } catch (Exception e)
+                    {
+                        throw new LexerException($"Failed to parse string \"{value}\": {e.Message}", location);
                     }
 
                     setToken(value, TokenType.String);
                 }
 
-                // Literals, operators
+                // Number literal (0-9)
+                else if (Char.IsDigit(source[0]))
+                {
+                    // Stores the current number
+                    string number = "";
+
+                    // Stores if the decimal point has already been used
+                    bool decimalUsed = false;
+
+                    // Stores if the character after the decimal is a number
+                    bool numberUsedAfterFloat = false;
+
+                    while (source.Length > 0 && (Char.IsDigit(source[0]) || source[0] == '.'))
+                    {
+                        // If the current character is a . and a decimal is already used then that's bad
+                        if (source[0] == '.' && decimalUsed == true)
+                            break;
+
+                        // Check if the current character is a decimal point
+                        if (source[0] == '.')
+                        {
+                            // Check if it is not a hanging decimal point
+                            if (source.Length != 1 && Char.IsDigit(source[1]))
+                                decimalUsed = true;
+                            // Illegal as something is expected after the deimal
+                            else break;
+                        }
+
+                        if (decimalUsed && source[0] != '.')
+                            numberUsedAfterFloat = true;
+
+                        // Add to final number
+                        number += removeFirst();
+                    }
+
+                    // Validate number
+                    if (decimalUsed && !numberUsedAfterFloat)
+                        throw new LexerException($"Expected a digit after decimal point", location);
+
+                    setToken(number, TokenType.Number);
+                }
+
+                // Check for identifier
+                else if (LookAhead(string.Join("", source), Prefixes.VerbatimIdentifier.Symbol) || Char.IsLetter(source[0]) || source[0] == '_')
+                {
+                    bool isVerbatim = false;
+                    if (LookAhead(string.Join("", source), Prefixes.VerbatimIdentifier.Symbol))
+                    {
+                        isVerbatim = true;
+                        removeMultiple(Prefixes.VerbatimIdentifier.Symbol.Length);
+
+                        if (!(Char.IsLetter(source[0]) || source[0] == '_'))
+                        {
+                            throw new LexerException($"Expected identifier after verbatim", location);
+                        }
+                    }
+
+                    string identifier = "";
+
+                    // Keep reading until there is no more
+                    do
+                    {
+                        identifier += removeFirst();
+                    } while (source.Length > 0 && (Char.IsLetter(source[0]) || Char.IsDigit(source[0]) || source[0] == '_'));
+
+                    if (isVerbatim)
+                    {
+                        setToken(identifier, TokenType.Identifier);
+                    }
+
+                    // Check if the identifier is an operator keyword
+                    else if (Operators.OperatorsContainingLetters.Any(x => x.Value.Symbol == identifier))
+                    {
+                        KeyValuePair<string, Operator> oper = Operators.OperatorsContainingLetters.First(x => x.Value.Symbol == identifier);
+                        setToken(identifier, oper.Value.TokenType);
+                    }
+
+                    // Check if it is a keyword
+                    else if (Keywords.KeywordList.ContainsKey(identifier))
+                    {
+                        setToken(identifier, Keywords.KeywordList.GetValueOrDefault(identifier));
+                    }
+
+                    // Check if it is a type
+                    else if (Keywords.Types.ContainsKey(identifier))
+                    {
+                        setToken(((int)Keywords.Types.GetValueOrDefault(identifier)).ToString(), TokenType.Type, identifier);
+                    }
+
+                    // Check if it is a modifier
+                    else if (Keywords.Modifiers.ContainsKey(identifier))
+                    {
+                        setToken(((int)Keywords.Modifiers.GetValueOrDefault(identifier)).ToString(), TokenType.Modifier, identifier);
+                    }
+
+                    // Generic identifier
+                    else
+                    {
+                        setToken(identifier, TokenType.Identifier);
+                    }
+                }
+
                 else
                 {
-                    // Check if it is an operator
+                    // Check if it an operator
                     Operator? operatorToken = null;
-                    foreach (var op in _operators) {
-                        if (LookAhead(string.Join("", src), op.Value.Symbol))
+                    string joinedSource = string.Join("", source);
+
+                    foreach (KeyValuePair<string, Operator> oper in Operators.AllOperators)
+                    {
+                        if (LookAhead(joinedSource, oper.Value.Symbol))
                         {
-                            // The token was found
-                            src = src.Skip(op.Value.Symbol.Length).ToArray();
-                            lineIdx += op.Value.Symbol.Length;
-                            operatorToken = op.Value;
+                            source = source.Skip(oper.Value.Symbol.Length).ToArray();
+                            lineIndex += oper.Value.Symbol.Length;
+                            operatorToken = oper.Value;
                             break;
                         }
                     }
 
-                    // Check if it was an operator
+                    // Check if an operator was found
                     if (operatorToken != null)
                     {
                         setToken(operatorToken.Symbol, operatorToken.TokenType);
                     }
 
-                    // Check for number token
-                    else if (Char.IsDigit(src[0]))
-                    {
-                        string number = "";
-                        bool floatUsed = false;
-                        bool isNumberAfterFloat = false;
-
-                        while (src.Length > 0 && (Char.IsDigit(src[0]) || src[0] == '.'))
-                        {
-                            if (src[0] == '.' && floatUsed == true)
-                                break;
-
-                            if (src[0] == '.')
-                            {
-                                if (src.Length != 1 && Char.IsDigit(src[1]))
-                                {
-                                    floatUsed = true;
-                                } else
-                                {
-                                    break;
-                                }
-                            }
-
-                            if (floatUsed && src[0] != '.')
-                                isNumberAfterFloat = true;
-
-                            number += removeFirst();
-                        }
-
-                        if (floatUsed == true && isNumberAfterFloat == false)
-                        {
-                            throw new LexerException_new()
-                            {
-                                Location = location,
-                                Error = $"Invalid decimal"
-                            };
-                        }
-
-                        setToken(number, TokenType.Number);
-                    }
-
-                    // Check or identifier
-                    else if (Char.IsLetter(src[0]) || src[0] == '_' || src[0] == Operators.SpecialIdentifierPrefix)
-                    {
-                        string identifier = "";
-
-                        // Check if it is special ident.
-                        if (src[0] == Operators.SpecialIdentifierPrefix)
-                        {
-                            identifier += removeFirst();
-                        }
-
-                        while (src.Length > 0 && (Char.IsLetter(src[0]) || src[0] == '_' || Char.IsNumber(src[0])))
-                        {
-                            identifier += removeFirst();
-                        }
-
-                        // Check for operator keywords
-                        if (Operators.LetterContainingOperators.Any(x => x.Value.Symbol == identifier))
-                        {
-                            KeyValuePair<string, Operator> op = Operators.LetterContainingOperators.First(x => x.Value.Symbol == identifier);
-                            setToken(identifier, op.Value.TokenType);
-                        }
-
-                        // Check if it is a keyword
-                        else if (_keywords.ContainsKey(identifier))
-                        {
-                            setToken(identifier, _keywords.GetValueOrDefault(identifier));
-                        }
-
-                        // Check if it was a type
-                        else if (Keywords.Types.ContainsKey(identifier))
-                        {
-                            setToken(((int)Keywords.Types.GetValueOrDefault(identifier)).ToString(), TokenType.Type);
-                        }
-
-                        // Check modifier
-                        else if (Keywords.Modifiers.ContainsKey(identifier))
-                        {
-                            setToken(((int)Keywords.Modifiers.GetValueOrDefault(identifier)).ToString(), TokenType.Modifier);
-                        }
-
-                        else
-                        {
-                            setToken(identifier, TokenType.Identifier);
-                        }
-                    }
-
-                    // Check if skippable
-                    else if (IsSkippable(src[0]))
-                    {
-                        removeFirst();
-                        continue;
-                    }
-
-                    else if (src[0] == '\n')
-                    {
-                        currentLine++;
-                        lineIdx = -1;
-                        removeFirst();
-                        continue;
-                    }
-
-                    // Unrecognised
+                    // Unrecognised character
                     else
                     {
-                        throw new LexerException_new()
-                        {
-                            Location = location,
-                            Error = $"Unrecognised character found in source: {src[0]}"
-                        };
+                        location.TokenEnd = lineIndex;
+                        throw new LexerException($"Unrecognised character found in source: {source[0]}", location);
                     }
                 }
 
-                if (tokenType == null)
-                    throw new LexerException(new());
 
-                // Update location
-                location.TokenEnd = lineIdx;
-                tokens.Add(new Token(tokenValue, (TokenType)tokenType, location));
+                if (tokenType == null)
+                    throw new LexerException($"Token type was null for unknown reason ({tokenValue})", location);
+
+                // Finalise token
+                location.TokenEnd = lineIndex;
+                tokens.Add(new Token(tokenValue, (TokenType)tokenType, location, stringValue));
             }
 
             // Add EOF
-            tokens.Add(new Token("", TokenType.EOF, new Location()
+            tokens.Add(new Token("", TokenType.EOF, new()
             {
-                Source = sourceCode,
                 TokenStart = sourceCode.Length,
                 TokenEnd = sourceCode.Length,
+                FileName = fileName,
                 Line = currentLine,
-                FileName = fileName
+                Source = id,
             }));
 
-            stopwatch.Stop();
-            Debug.Log($"Lexer took {stopwatch.ElapsedMilliseconds}ms");
-
+            // Finish
             return tokens;
         }
     }

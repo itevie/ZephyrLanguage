@@ -1,24 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Runtime.Values
+namespace ZephyrNew.Runtime.Values
 {
     internal class NativeFunction : RuntimeValue
     {
-        public Func<List<RuntimeValue>, Environment, Parser.AST.Expression?, RuntimeValue> Call;
-        public string Name = "unknown";
-        public bool IsTypeCall { get; set; } = false;
-        public RuntimeValue TypeCallValue { get; set; } = new RuntimeValue();
-        public NativeFunctionOptions Options { get; set; } = new NativeFunctionOptions();
+        public Func<NativeFunctions.ExecutorOptions, RuntimeValue> Call;
+        public NativeFunctions.Options Options;
 
-        public NativeFunction(Func<List<RuntimeValue>, Environment, Parser.AST.Expression?, RuntimeValue> call)
+        public NativeFunction(Func<NativeFunctions.ExecutorOptions, RuntimeValue> func, NativeFunctions.Options options)
         {
-            Type = ValueType.NativeFunction;
-            Call = call;
+            Type = new VariableType(Values.ValueType.NativeFunction);
+            Call = func;
+            Options = options;
         }
     }
 }

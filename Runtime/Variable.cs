@@ -3,20 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZephyrNew.Runtime.Values;
 
-namespace Zephyr.Runtime
+namespace ZephyrNew.Runtime
 {
     internal class Variable
     {
-        public Values.RuntimeValue Value;
-        public VariableSettings Options;
-        public string Name;
+        private RuntimeValue _value;
 
-        public Variable(Values.RuntimeValue value, string name = "Unkown!", VariableSettings? settings = null)
+        public RuntimeValue Value
         {
-            Value = value;
-            Options = settings ?? new VariableSettings();
-            Name = name;
+            get
+            {
+                return _value;
+            }
+
+            set
+            {
+                _value = value;
+            }
+        }
+
+        public VariableSettings Settings { get; set; }
+
+        public Variable(RuntimeValue value, VariableSettings settings)
+        {
+            _value = value;
+            Settings = settings;
         }
     }
 }

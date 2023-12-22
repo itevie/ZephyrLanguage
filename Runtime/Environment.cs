@@ -1,216 +1,174 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Zephyr.Lexer;
-using Zephyr.Parser;
-using Zephyr.Parser.AST;
-using Zephyr.Runtime.NativeFunctions;
-using Zephyr.Runtime.Values;
-using Zephyr.Runtime.Values.Helpers;
+using ZephyrNew.Lexer;
+using ZephyrNew.Runtime.NativeFunctions;
+using ZephyrNew.Runtime.Values;
 
-namespace Zephyr.Runtime
+namespace ZephyrNew.Runtime
 {
     /// <summary>
-    /// An environemnt is where all variables are stored
+    /// Represents a Zephyr environment or rather a "scope"
     /// </summary>
     internal class Environment
     {
         /// <summary>
-        /// The parent variable
+        /// Where all the variables are stored for the current environment
         /// </summary>
-        private Environment? _parent;
+        private Dictionary<string, Variable> _variables = new Dictionary<string, Variable>();
+        private Dictionary<string, Export>? ExportedVariables = null;
+
 
         /// <summary>
-        /// The variables this environment contains
+        /// Represents the parent environment
         /// </summary>
-        public Dictionary<string, Variable> _variables = new();
+        private Environment? _parent = null;
 
-        /// <summary>
-        /// Exported VALUES
-        /// </summary>
-        public Dictionary<string, RuntimeValue> ExportedVariables = new();
-        public string Directory = "";
-
+        public string Directory;
 
         public Environment(Environment? parent = null)
         {
+            Debug.Log($"Environment created: {parent?.Directory}", LogType.Environment);
             _parent = parent;
-            if (parent == null)
-            {
-                LoadGlobalVariables();
-            }
+            Directory = parent?.Directory ?? "";
+
+            if (parent == null) SetupGlobal();
         }
 
-        public Values.RuntimeValue DeclareVariable(string variableName, RuntimeValue value, VariableSettings settings, Parser.AST.Expression? from = null)
+        public Environment(string directory, Environment? parent = null)
         {
-            // Check if variable already exists
+            Debug.Log($"Environment created: {directory}", LogType.Environment);
+            _parent = parent;
+            Directory = directory;
+            ExportedVariables = new Dictionary<string, Export>();
+
+            if (parent == null) SetupGlobal();
+        }
+
+        // ----- Methods to do with managing variables -----
+        public Dictionary<string, Variable> GetVariables()
+        {
+            return _variables;
+        }
+
+        public Variable DeclareVariable(string variableName, RuntimeValue value, VariableSettings settings, Location location)
+        {
+            settings.Name = variableName;
+
+            // Check if the variable already exists
             if (_variables.ContainsKey(variableName) && !settings.ForceDefinition)
-                throw new RuntimeException_new()
-                {
-                    Location = from?.Location,
-                    DeclaredAt = LookupVariable(variableName).DeclaredAt,
-                    ErrorCode = Errors.ErrorCode.VariableAlreadyExists,
-                };
+                throw new RuntimeException($"The varaible {variableName} already exists", location);
 
-            bool exists = false;
+            // Check type
+            if (Values.Helpers.TypeMatches(settings, value) != null)
+                throw new RuntimeException($"Cannot assign as {Values.Helpers.TypeMatches(settings, value)}", location);
 
-            if (settings.Modifiers.Count != 0)
-            {
-                value.Modifiers = settings.Modifiers;
-            }
+            // Check if it is discard
+            if (variableName == "_")
+                return new Variable(value, settings);
 
-            // Recursively add modifiers
-            AddModifiers(value, value.Modifiers);
+            //value.Type = settings.Type;
 
-            try
-            {
-                LookupVariable(variableName);
-                exists = true;
-            } catch { }
-            
-            if (exists == true && variableName.StartsWith("~") == false)
-            {
-                throw new RuntimeException_new()
-                {
-                    Location = from?.Location,
-                    DeclaredAt = LookupVariable(variableName).DeclaredAt,
-                    ErrorCode = Errors.ErrorCode.VariableAlreadyExists,
-                };
-            }
-
-            CheckType(value, settings, from);
-
-            // Set it
-            _variables[variableName] = new Variable(value, variableName, settings);
-            Verbose.Log($"Declared variable {variableName}", $"environment {from?.Location?.FileName}");
-            return value;
+            // Declare it
+            Debug.Log($"Variable declared: {variableName} {value.Visualise(noColor: true)}", LogType.Environment);
+            _variables[variableName] = new Variable(value, settings);
+            return _variables[variableName];
         }
 
-        private RuntimeValue AddModifiers(RuntimeValue value, List<Modifier> modifiers)
+        public RuntimeValue LookupVariable(string variableName, Location from)
         {
-            switch (value.Type)
-            {
-                case Values.ValueType.Null:
-                case Values.ValueType.Int:
-                case Values.ValueType.Long:
-                case Values.ValueType.Float:
-                case Values.ValueType.Double:
-                case Values.ValueType.String:
-                case Values.ValueType.Boolean:
-                case Values.ValueType.Function:
-                case Values.ValueType.NativeFunction:
-                case Values.ValueType.Enumerable:
-                    value.Modifiers = modifiers;
-                    return value;
-                case Values.ValueType.Object:
-                    value.Modifiers = modifiers;
+            // Check if discard
+            if (variableName == "_")
+                throw new RuntimeException($"_ cannot be found as this is the discard identifier", from);
 
-                    foreach (KeyValuePair<string, RuntimeValue> val in ((ObjectValue)value).Properties)
-                    {
-                        AddModifiers(val.Value, modifiers);
-                    }
-                    return value;
-                default:
-                    value.Modifiers = modifiers;
-                    return value;
-            }
+            // Check if variable exists
+            if (!AnywhereHasVariable(variableName))
+                throw new RuntimeException($"The variable {variableName} does not exist", from);
+            return ResolveVariable(variableName).Value;
         }
 
-        public Values.RuntimeValue AssignVariable(string variableName, RuntimeValue value, bool force = false, Expression? from = null)
+        public RuntimeValue AssignVariable(string variableName, RuntimeValue newValue, Location from)
         {
-            Environment environment = Resolve(variableName);
+            Variable variable = ResolveVariable(variableName);
 
-            // Get the variable
-            Variable variable = LookupVariable(variableName, true);
+            if (Values.Helpers.TypeMatches(variable.Settings, newValue) != null)
+                throw new RuntimeException($"Cannot assign as {Values.Helpers.TypeMatches(variable.Settings, newValue)}", from);
 
-            // Check if it is constant
-            if (variable.Options.IsConstant && force == false)
+            // Check if final
+            if (variable.Value.HasModifier(Modifier.Final))
             {
-                throw new RuntimeException_new()
-                {
-                    Location = from?.Location,
-                    ErrorCode = Errors.ErrorCode.AssignmentToConstantVariable,
-                    DeclaredAt = variable.Options.DeclaredAt
-                };
+                throw new RuntimeException($"Cannot assign to a variable with the final modifier", from);
             }
 
-            CheckType(value, variable.Options, from);
+            variable.Value = newValue;
 
-            // Check for number cast
-            if (Helpers.IsNumberValue(value.Type))
+            return variable.Value;
+        }
+
+        public Variable ResolveVariable(string variableName)
+        {
+            // Check if current environment contains it
+            if (HasVariable(variableName))
+                return _variables[variableName];
+
+            // Check if parent contains it
+            if (_parent != null)
+                return _parent.ResolveVariable(variableName);
+                
+            // Variable not found
+            throw new RuntimeException($"Failed to lookup variable: {variableName} as it does not exist in any enclosing scope", Location.UnknownLocation);
+        }
+
+        public RuntimeValue ExportVariable(string identifier, RuntimeValue value, Location exportedAt)
+        {
+            // Check if can export here
+            if (ExportedVariables == null)
             {
-                value = Handlers.Helpers.CastValueHelper(value, variable.Options.Type);
+                throw new RuntimeException($"Cannot export here", exportedAt);
             }
 
-            // Assign
-            environment._variables[variableName].Value = value;
+            // Check if already exported
+            if (ExportedVariables.ContainsKey(identifier))
+                throw new RuntimeException($"A value with name {identifier} has already been exported", exportedAt);
+
+            // Export
+            ExportedVariables[identifier] = new Export(value, identifier, exportedAt);
 
             return value;
         }
 
-        public RuntimeValue LookupVariable(string variableName, Expression? from = null)
+        public bool AnywhereHasVariable(string variableName)
         {
-            Environment environment = Resolve(variableName, from);
-            return environment._variables[variableName].Value;
+            return _variables.ContainsKey(variableName) || (_parent?.AnywhereHasVariable(variableName) ?? false);
         }
 
-        public Variable LookupVariableReturnVariable(string variableName, Expression? from = null)
+        public bool HasVariable(string variableName)
         {
-            Environment environment = Resolve(variableName, from);
-            return environment._variables[variableName];
+            return _variables.ContainsKey(variableName);
         }
 
-        public Variable LookupVariable(string variableName, bool abc, Expression? from = null)
+        public Dictionary<string, RuntimeValue> GetPublicVariables()
         {
-            Environment environment = Resolve(variableName, from);
-            return environment._variables[variableName];
-        }
+            Dictionary<string, RuntimeValue> publicVariables = new Dictionary<string, RuntimeValue>();
 
-        public Environment Resolve(string variableName, Expression? from = null)
-        {
-            // Check if this env contains it
-            if (_variables.ContainsKey(variableName))
-                return this;
-
-            // Check if there is a parent
-            if (_parent == null)
-                throw new RuntimeException(new()
-                {
-                    Location = from?.Location,
-                    Error = $"Cannot find variable: {variableName}"
-                });
-
-            // Try resolve in parent
-            return _parent.Resolve(variableName, from);
-        }
-
-        public Environment GetGlobalEnvironment()
-        {
-            if (this._parent != null)
+            foreach (KeyValuePair<string, Export> keyValuePair in ExportedVariables)
             {
-                return this._parent.GetGlobalEnvironment();
+                publicVariables.Add(keyValuePair.Key, keyValuePair.Value.Value);
             }
 
-            return this;
+            return publicVariables;
         }
 
-        private void LoadGlobalVariables()
+        // ----- Global Setup -----
+        public void SetupGlobal()
         {
-            Debug.Log($"Loading global variables", $"global environment");
+            FieldInfo[] nativeFunctionProperties = typeof(NativeFunctions.Native).GetFields(BindingFlags.Public | BindingFlags.Static);
 
-            VariableSettings defaultSettings = new()
-            {
-                IsConstant = true,
-                Modifiers = new()
-                {
-                    Modifier.Final
-                }
-            };
-
-            FieldInfo[] nativeFunctionProperties = typeof(NativeFunctions.NativeFunctions).GetFields(BindingFlags.Public | BindingFlags.Static);
             // Load all properties from NativeFunctions
             foreach (FieldInfo fieldInfo in nativeFunctionProperties)
             {
@@ -219,121 +177,14 @@ namespace Zephyr.Runtime
                 if (package != null)
                 {
                     // Load it
-                    RuntimeValue val = Values.Helpers.Helpers.CreateObject(package.Object);
-                    val.Modifiers = new()
-                    {
-                        Modifier.Final
-                    };
-                    DeclareVariable(package.Name, val, defaultSettings);
+                    RuntimeValue val = package.Object;
+                    DeclareVariable(package.Name, val, new VariableSettings(new VariableType(Values.ValueType.Object), Location.UnknownLocation), Location.UnknownLocation);
                 }
             }
 
-            // Declare global functions
-            DeclareVariable("typeof", Values.Helpers.Helpers.CreateNativeFunction((args, env, expr) =>
-            {
-                Util.ExpectExact(args, new() { Values.ValueType.Any });
-                return Values.Helpers.Helpers.CreateString(args[0].Type.ToString());
-            }, options: new()
-            {
-                Name = "typeof",
-                Parameters =
-                {
-                    new()
-                    {
-                        Name = "variable",
-                        Type = Values.ValueType.Any
-                    }
-                }
-            }), defaultSettings);
-
-            // Declare default variables
-            DeclareVariable("null", Values.Helpers.Helpers.CreateNull(), defaultSettings);
-            DeclareVariable("true", Values.Helpers.Helpers.CreateBoolean(true), defaultSettings);
-            DeclareVariable("false", Values.Helpers.Helpers.CreateBoolean(false), defaultSettings);
-
-            DeclareVariable("eval", Helpers.CreateNativeFunction((args, env, expr) =>
-            {
-                Util.ExpectExact(args, new() { Values.ValueType.String });
-
-                try
-                {
-                    // Generate env
-                    Runtime.Environment environment = new(Runner.FileExecutor.GlobalEnvironment);
-                    // Produce AST and execute
-                    Parser.AST.Program program = new Parser.Parser().ProduceAST(((StringValue)args[0]).Value, "eval");
-                    RuntimeValue value = Interpreter.Evaluate(program, env);
-                    return value;
-                } catch (ParserException e)
-                {
-                    throw new RuntimeException(new()
-                    {
-                        Location = Handlers.Helpers.GetLocation(expr?.Location, args[0].Location),
-                        Error = $"Parser error: {e.Message}"
-                    });
-                } catch (RuntimeException e)
-                {
-                    throw new RuntimeException(new()
-                    {
-                        Location = Handlers.Helpers.GetLocation(expr?.Location, args[0].Location),
-                        Error = $"Runtime error: {e.Message}"
-                    });
-                } catch (LexerException e)
-                {
-                    throw new RuntimeException(new()
-                    {
-                        Location = Handlers.Helpers.GetLocation(expr?.Location, args[0].Location),
-                        Error = $"Lexer error: {e.Message}"
-                    });
-                }
-            }, options: new() { Name = "eval", Parameters = { new() { Name = "evaluationString", Type = Values.ValueType.String } } }), defaultSettings);
-        }
-
-        private static void CheckType(RuntimeValue value, VariableSettings settings, Expression? from)
-        {
-            if (settings.Type != Values.ValueType.Any)
-            {
-                if (value.Type != settings.Type && !(Helpers.IsNumberValue(value.Type) && Helpers.IsNumberValue(settings.Type)))
-                {
-                    // Check null
-                    if (value.Type == Values.ValueType.Null && settings.IsNullable == false)
-                        throw new RuntimeException_new()
-                        {
-                            Location = from?.Location,
-                            Error = "Cannot assign Null to a non-nullable variable",
-                            ErrorCode = Errors.ErrorCode.NullAssignment
-                        };
-                    else if (value.Type != Values.ValueType.Null)
-                    {
-                        throw new RuntimeException_new()
-                        {
-                            Location = from?.Location,
-                            Error = $"Cannot assign type {value.Type} to a variable of type {settings.Type}"
-                        };
-                    }
-                }
-            }
-        }
-
-        private static RuntimeValue ResolveType(RuntimeValue value, VariableSettings settings, Expression? from)
-        {
-            // Check if value is a number
-            if (Helpers.IsNumberValue(value.Type))
-            {
-                // Check floats
-                if (value.Type == Values.ValueType.Float && settings.Type != Values.ValueType.Float)
-                {
-                    throw new RuntimeException(new()
-                    {
-                        Location = from?.Location,
-                        Error = $"Cannot assign float to a {settings.Type} variable"
-                    });
-                }
-
-                // Just convert it
-                return Helpers.CastNonFloatNumberValues(value, settings.Type);
-            }
-
-            return value;
+            DeclareVariable("true", new BooleanValue(true), new(new VariableType(Values.ValueType.Boolean), Location.UnknownLocation), Location.UnknownLocation);
+            DeclareVariable("false", new BooleanValue(false), new(new VariableType(Values.ValueType.Boolean), Location.UnknownLocation), Location.UnknownLocation);
+            DeclareVariable("null", new NullValue(), new(new VariableType(Values.ValueType.Null) { IsNullable = true, }, Location.UnknownLocation), Location.UnknownLocation);
         }
     }
 }

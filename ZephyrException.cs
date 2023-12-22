@@ -4,115 +4,114 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
-using Zephyr.Lexer;
-using Zephyr.Runtime.Values;
+using Pastel;
+using ZephyrNew.Errors;
+using ZephyrNew.Runtime;
 
-namespace Zephyr
+namespace ZephyrNew.Lexer
 {
-    internal class ZephyrExceptionOptions
-    {
-        public Token? Token { get; set; } = null;
-        public Location? Location { get; set; } = null;
-        public string Error = "Unknown error";
-        public RuntimeValue? Reference = null;
-    }
-
     internal class ZephyrException : Exception
     {
-        public Expression? Expression { get; set; } = null;
-        public Token? Token { get; set; } = null;
-        public Location? Location { get; set; } = null;
-        public RuntimeValue? Reference { get; set; } = null;
-        public Errors.ErrorType? ErrorType { get; set; } = null;
-        public Errors.ErrorCode ErrorCode { get; set; } = Errors.ErrorCode.Generic;
-        public Exception? MoreDetails { get; set; } = null;
-        public string Error = "";
+        /// <summary>
+        /// The basic message for the error
+        /// </summary>
+        public string Error { get; set; } = "Unknown Error";
 
-        public ZephyrException(ZephyrExceptionOptions options) : base(GenerateExceptionText(options))
+        /// <summary>
+        /// The location in which this error occurred
+        /// </summary>
+        public Location Location;
+
+        /// <summary>
+        /// If an expression is given it will try to find the location from that if Location is not provided
+        /// </summary>
+        public Expression? Expression = null;
+
+        /// <summary>
+        /// In which part of the interpreter the error occurred
+        /// </summary>
+        public ErrorType ErrorType { get; set; } = ErrorType.Generic;
+
+        public ZephyrException(string message, Location location) : base(message)
         {
-
+            Error = message;
+            Location = location;
         }
 
-        public ZephyrException(string msg, bool isOnlyString) : base(msg)
-        {
-
-        }
-
-        public static string GenerateExceptionText(ZephyrExceptionOptions options)
+        public string Visualise()
         {
             string finished = "";
+            finished += GenerateLocation(this.Location);
+            finished += $"\n\n{ErrorType} error: ".Pastel(ConsoleColor.Red) + $"{Error}";
 
-            // Check if there is a token
-            if (options.Token != null || options.Location != null)
+            //finished += $"\n\nC# StackTrace:\n{StackTrace}".Pastel(ConsoleColor.Gray);
+            Stack stack = StackContainer.GetStack();
+            if (stack.Stacktrace.Count > 0)
             {
-                Location location = options.Token != null ? options.Token.Location : options.Location ?? throw new Exception();
-
-                // Get the line from source
-                int lineNumber = location.Line;
-                string line = location.Source.Split('\n')[lineNumber].Replace("\t", " ");
-
-                // Check if should modify TokenEnd
-                if (location.TillEnd) location.TokenEnd = line.Length - 1;
-
-                // Add where
-                finished += $"{location.FileName}:[Line {location.Line + 1} Char {location.TokenStart + 1}{(location.TokenEnd == (location.TokenStart + 1) ? "" : ("-" + location.TokenEnd))}]";
-
-                finished += "\n\n" + line;
-
-                // Add carets
-                int caretLength = location.TokenEnd - location.TokenStart;
-                if (caretLength == 0) caretLength = 1;
-
-                finished += $"\n{string.Concat(Enumerable.Repeat(" ", location.TokenStart))}{string.Concat(Enumerable.Repeat("^", caretLength))}{(location.TillEnd ? "..." : "")}";
-            } else
-            {
-                finished += $"There was no location information provided with this error, sorry";
+                finished += $"\n\nStacktrace:\n{stack.Visualise()}".Pastel(ConsoleColor.Gray);
             }
-
-            finished += $"\n\n";
-
-            if (options.Reference != null)
-            {
-                finished += VisualiseReference(options.Reference) + "\n";
-            }
-            
-            finished += options.Error;
 
             return finished;
         }
 
-        public static string VisualiseReference(RuntimeValue val)
+        public static string GenerateLocation(Location location)
         {
-            string done = "Ref: ";
+            string finished = "";
 
-            switch (val.Type)
+            int lineNumber = location.Line;
+
+            // Get the source of the location
+            string? source = location.Source != null ? Lexer.AllSources[location.Source] : null;
+            string line = "<No location source provided>";
+
+            if (source != null)
+                line = source.Split('\n')[lineNumber].Replace("\t", "");
+
+            // Compute where it happened
+            int fromChar;
+            int toChar = -1;
+
+            if (location.TokenStart == location.TokenEnd || (location.TokenEnd == location.TokenStart + 1))
+                fromChar = location.TokenStart + 1;
+            else
             {
-                case Runtime.Values.ValueType.NativeFunction:
-                    NativeFunction nfVal = (NativeFunction)val;
-                    done += $"NativeFunction {(nfVal.Name == "" ? nfVal.Options.Name : nfVal.Name)}(";
-
-                    // Add params
-                    for (int i = 0; i < nfVal.Options.Parameters.Count; i++)
-                    {
-                        NativeFunctionParameter param = nfVal.Options.Parameters[i];
-
-                        done += $"{param.Type.ToString().ToLower()} {param.Name}{(i != nfVal.Options.Parameters.Count - 1 ? ", " : "")}";
-                    }
-
-                    if (nfVal.Options.AllParamsOfType != null)
-                    {
-                        done += $"{nfVal.Options.AllParamsOfType?.ToString().ToLower()}...";
-                    }
-                    else if (nfVal.Options.UncheckedParameters)
-                    {
-                        done += "?...?";
-                    }
-
-                    done += ");";
-                    break;
+                fromChar = location.TokenStart + 1;
+                toChar = location.TokenEnd;
             }
 
-            return done;
+            // Add where it happened
+            finished += $"{location.FileName}:[Line {lineNumber + 1} Char {fromChar}{(toChar != -1 ? "-" + toChar : "")}]{(location.AssumedLocation ? " (Assumed)" : "")}";
+            finished += $"\n\n{line}".Pastel(ConsoleColor.Gray);
+
+            // Add carets
+            int caretLength = location.TokenEnd - location.TokenStart;
+            if (caretLength == 0) caretLength = 1;
+
+            try
+            {
+                // Construct the arrow
+                string arrow = "";
+
+                // Add the beginning padding
+                arrow += string.Concat(Enumerable.Repeat(" ", location.TokenStart));
+
+                // Check if the arrow should be ^---^ style
+                if (caretLength > 2)
+                {
+                    arrow += "^";
+                    arrow += string.Concat(Enumerable.Repeat("-", caretLength - 2));
+                    arrow += "^";
+                }
+                else
+                {
+                    arrow += string.Concat(Enumerable.Repeat("^", caretLength));
+                }
+
+                finished += $"\n{arrow}".Pastel(ConsoleColor.Yellow);
+            }
+            catch { };
+
+            return finished;
         }
     }
 }

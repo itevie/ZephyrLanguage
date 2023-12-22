@@ -4,42 +4,37 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Lexer
+namespace ZephyrNew.Lexer
 {
-    /// <summary>
-    /// This is used everywhere to indicate where the source originated from, for example, where an identifier is in the file
-    /// </summary>
     internal class Location
     {
-        /// <summary>
-        /// The line on which the item resides
-        /// </summary>
         public int Line { get; set; } = 0;
-
-        /// <summary>
-        /// Where the token starts in the line
-        /// </summary>
         public int TokenStart { get; set; } = 0;
-
-        /// <summary>
-        /// Where the token ends in the line
-        /// </summary>
         public int TokenEnd { get; set; } = 0;
-
-        /// <summary>
-        /// The complete source of the variable
-        /// Remove this at some point it might be bad i think
-        /// </summary>
-        public string Source { get; set; } = "";
-
-        /// <summary>
-        /// The file name - this is purely only for showing which file name it is from
-        /// </summary>
-        public string FileName { get; set; } = "";
-
-        /// <summary>
-        /// Whether or not the token goes off onto the next line, if it does instead of showing it, show ^...
-        /// </summary>
+        public string FileName { get; set; } = "<Unknown Filename>";
         public bool TillEnd { get; set; } = false;
+        public string? Source { get; set; } = null;
+        public bool AssumedLocation { get; set; } = false;
+
+        public string GenerateSimple()
+        {
+            // Compute where it happened
+            int fromChar;
+            int toChar = -1;
+
+            if (TokenStart == TokenEnd || (TokenEnd == TokenStart + 1))
+                fromChar = TokenStart + 1;
+            else
+            {
+                fromChar = TokenStart + 1;
+                toChar = TokenEnd;
+            }
+
+            // Add where it happened
+            return  $"{FileName}:[Line {Line + 1} Char {fromChar}{(toChar != -1 ? "-" + toChar : "")}]{(AssumedLocation ? " (Assumed)" : "")}";
+        }
+
+        // ----- Static Presets -----
+        public static Location UnknownLocation = new Location();
     }
 }

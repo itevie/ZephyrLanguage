@@ -4,60 +4,59 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Parser.AST
+namespace ZephyrNew.Parser.AST
 {
-    /// <summary>
-    /// All AST nodes will reference this
-    /// </summary>
     internal enum Kind
     {
         Unknown,
 
         Program,
 
-        // Statements
-        ExportStatement,
+        // ----- Statements -----
         VariableDeclaration,
-        EventDeclaration,
-        Modifier,
         FunctionDeclaration,
-        ReturnStatement,
-        BreakStatement,
-        PassthroughStatement,
-        ContinueStatement,
         IfStatement,
         BlockStatement,
-        WhileStatement,
-        ForEachStatement,
-        TryStatement,
+        LoopStatement,
+        BreakStatement,
+        ContinueStatement,
+        ReturnStatement,
+        EchoStatement,
+        ApplyModifierStatement,
         ImportStatement,
-        SwitchStatement,
+        StructDeclaration,
+        ForEachStatement,
+        ForStatement,
+        TryStatement,
+        ThrowStatement,
+        DecoratorApplierStatement,
+        ExportStatement,
 
-        // Expression
+        // ----- Expressions -----
+        BinaryExpression,
         AssignmentExpression,
-        MemberExpression,
-        CallExpression,
         LogicalExpression,
         ComparisonExpression,
-        UnaryExpression,
-        UnaryRightExpression,
-        IndexerExpression,
+        TernaryExpression,
         RangeExpression,
         CastExpression,
-        TernaryExpression,
+        UnaryExpression,
+        UnaryRightExpression,
+        CallExpression,
+        InExpression,
+        MemberExpression,
         PipeExpression,
+        AwaitExpression,
+        FunctionExpression,
+        LambdaExpression,
+        LambdaArgumentList,
+        SpreadExpression,
 
-        // Literals
-        Property,
-        ObjectLiteral,
-        NumericLiteral,
+        // ----- Literals -----
         Identifier,
-        BinaryExpression,
+        NumericLiteral,
         StringLiteral,
         ArrayLiteral,
-        Varref,
-
-        // Other
-        SwitchCase,
+        ObjectLiteral,
     }
 }

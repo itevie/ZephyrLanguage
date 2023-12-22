@@ -3,19 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZephyrNew.Lexer;
 
-namespace Zephyr.Parser.AST
+namespace ZephyrNew.Parser.AST
 {
-    /// <summary>
-    /// The base AST node for the entire tree
-    /// </summary>
     internal class Program : Expression
     {
-        public List<Expression> Body = new();
+        public List<Expression> Body = new List<Expression>();
 
-        public Program()
+        public Program(Location location) : base(Kind.Program, location)
         {
-            Kind = Kind.Program;
+
         }
     }
 }

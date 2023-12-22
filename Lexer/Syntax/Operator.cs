@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Lexer.Syntax
+namespace ZephyrNew.Lexer.Syntax
 {
     internal class Operator
     {

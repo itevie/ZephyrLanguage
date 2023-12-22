@@ -1,18 +1,26 @@
-﻿using System;
+﻿using Pastel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Runtime.Values
+namespace ZephyrNew.Runtime.Values
 {
-    internal class NumberValue_deprecated : RuntimeValue
+    internal class NumberValue : RuntimeValue
     {
-        public float Value = 0;
+        public double Value;
 
-        public NumberValue_deprecated()
+        public NumberValue(double value)
         {
-            Type = ValueType.Number;
+            SetType(ValueType.Number);
+            Value = value;
+        }
+
+        public override string Visualise(bool alone = true, bool noColor = false)
+        {
+            string text = $"{Value}";
+            return noColor ? text : text.Pastel(ConsoleColor.Magenta);
         }
     }
 }

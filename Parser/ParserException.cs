@@ -3,20 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZephyrNew.Lexer;
 
-namespace Zephyr.Parser
+namespace ZephyrNew.Parser
 {
     internal class ParserException : ZephyrException
     {
-        public ParserException(ZephyrExceptionOptions options) : base(GenerateExceptionText(options))
+        public ParserException(string message, Location location) : base(message, location)
         {
-
-        }
-
-        public static new ZephyrExceptionOptions GenerateExceptionText(ZephyrExceptionOptions options)
-        {
-            options.Error = $"Parser error: {options.Error}";
-            return options;
+            ErrorType = Errors.ErrorType.Parser;
         }
     }
 }

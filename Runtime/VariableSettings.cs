@@ -3,32 +3,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Zephyr.Parser.AST;
+using ZephyrNew.Lexer;
+using ZephyrNew.Parser.AST;
 
-namespace Zephyr.Runtime
+namespace ZephyrNew.Runtime
 {
     internal class VariableSettings
     {
-        public bool IsConstant { get; set; } = false;
-        public Values.ValueType Type { get; set; } = Values.ValueType.Any;
-        public bool IsNullable { get; set; } = false;
-        public string? Origin { get; set; } = null;
-        public List<Values.Modifier> Modifiers { get; set; } = new();
-        public Expression? DeclaredAt { get; set; } = null;
+        public VariableType Type { get; set; }
+        public Location DeclaredAt { get; set; }
         public bool ForceDefinition { get; set; } = false;
-    }
+        public string Name { get; set; } = "<Unknown>";
 
-    internal class VariableSettingsPresets
-    {
-        public static VariableSettings Secured = new VariableSettings()
+        public VariableSettings(VariableType type, Location declaredAt)
         {
-            IsConstant = true,
-            Modifiers =
-            {
-                Values.Modifier.Final
-            },
-            IsNullable = false,
-            ForceDefinition = true
-        };
+            Type = type;
+            DeclaredAt = declaredAt;
+        }
     }
 }

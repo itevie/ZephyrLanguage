@@ -4,13 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Runtime.Values
+namespace ZephyrNew.Runtime.Values
 {
-    internal class StructValue : ObjectValue
+    internal class StructValue : RuntimeValue
     {
-        public StructValue()
+        public Dictionary<string, VariableType> Fields;
+
+        public StructValue(Dictionary<string, VariableType> fields)
         {
-            Type = ValueType.Struct;
+            Type = new VariableType(ValueType.Struct);
+            Fields = fields;
         }
     }
 }

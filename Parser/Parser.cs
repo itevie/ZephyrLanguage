@@ -1,809 +1,107 @@
-﻿using CommandLine;
-using Spectre.Console.Rendering;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
-using Zephyr.Lexer;
-using Zephyr.Lexer.Syntax;
-using Zephyr.Parser.AST;
-using Zephyr.Parser.AST.Expressions;
-using Zephyr.Parser.AST.Statements;
-using Zephyr.Runtime.Handlers;
+using System.Windows.Markup;
+using ZephyrNew.Lexer;
+using ZephyrNew.Lexer.Syntax;
+using ZephyrNew.Parser.AST;
+using ZephyrNew.Runtime;
 
-namespace Zephyr.Parser
+namespace ZephyrNew.Parser
 {
-    /// <summary>
-    /// Parses given lexed tokens into an AST.
-    /// </summary>
     internal class Parser
     {
-        private List<Token> tokens = new();
+        private List<Token> tokens = new List<Token>();
 
-        /// <summary>
-        /// Checks if the current token is an End Of File token
-        /// </summary>
-        /// <returns>Whether or not the current token is an EOF</returns>
-        private bool NotEOF()
+        // ----- Basic parsing details -----
+        private static List<string> ValidMultiplicativeOperators = new List<string>()
         {
-            return tokens[0].TokenType != TokenType.EOF;
-        }
+            Operators.ArithmeticOperators["Multiply"].Symbol,
+            Operators.ArithmeticOperators["Divide"].Symbol,
+            Operators.ArithmeticOperators["Percentage"].Symbol,
+            Operators.ArithmeticOperators["ReversePercentage"].Symbol,
+            Operators.ArithmeticOperators["Power"].Symbol,
+            Operators.ArithmeticOperators["Modulo"].Symbol,
+            Operators.ArithmeticOperators["Exponent"].Symbol,
+        };
 
-        /// <summary>
-        /// Returns the current token
-        /// </summary>
-        /// <returns>The current token</returns>
+        private static List<string> ValidAdditiveOperators = new List<string>()
+        {
+            Operators.ArithmeticOperators["Plus"].Symbol,
+            Operators.ArithmeticOperators["Minus"].Symbol,
+        };
+
+        // ----- Basic syntax helper functions -----
         private Token At()
         {
             return tokens[0];
         }
 
-
-        /// <summary>
-        /// Consumes the current token, removes it and returns it
-        /// </summary>
-        /// <returns>Returns the current token</returns>
         private Token Eat()
         {
-            Token previous = At();
+            Token token = At();
             tokens.RemoveAt(0);
-            return previous;
+            return token;
         }
 
-        private Token Expect(TokenType type, string error = "", string specific = "")
+        private Token Expect(TokenType expectedType, string? customMessage = null)
         {
-            Token previous = Eat();
+            if (At().Type != expectedType)
+                throw new ParserException(customMessage ?? $"Expected token type {expectedType} but got {At().Type}", At().Location);
+            return Eat();
+        }
 
-            // Check if correct type
-            if (previous == null || previous.TokenType != type)
+        private Token ExpectExact(TokenType expectedType, string specificType, string? customMessage = null)
+        {
+            if (At().Type != expectedType || At().Value != specificType)
+                throw new ParserException(customMessage ?? $"Expected ({specificType}) but got {At().Type}", At().Location);
+            return Eat();
+        }
+
+        private void NeedsSemiColon(Expression expression)
+        {
+            if (expression.NeedsSemicolon)
             {
-                throw new ParserException_new()
+                if (At().Type != TokenType.Semicolon)
                 {
-                    Token = previous,
-                    ErrorCode = Errors.ErrorCode.GenericUnexpectedToken,
-                    Error = $"Unexpected {previous?.TokenType}, " + (error != "" ? error : $" expected {type}")
-                };
+                    throw new ParserException($"Semicolon expected after {expression.Kind}", expression.Location);
+                }
             }
-
-            return previous;
         }
 
-        /// <summary>
-        /// Used to check whether or not the expression requires a semi colon after it
-        /// </summary>
-        /// <param name="value">The value to check</param>
-        /// <returns>Yes or no</returns>
-        private static bool NeedSemiColon(Expression value)
-        {
-            if (value.Kind == Kind.FunctionDeclaration || value.Kind == Kind.ObjectLiteral || 
-                value.Kind == Kind.IfStatement || value.Kind == Kind.WhileStatement ||
-                value.Kind == Kind.ForEachStatement || value.Kind == Kind.TryStatement ||
-                value.Kind == Kind.SwitchStatement)
-                return false;
-            return true;
-        }
-
-
-        /// <summary>
-        /// The base function for pasing the source code
-        /// </summary>
-        /// <param name="sourceCode">The source code as a string</param>
-        /// <param name="fileName">The file-name for locational reasons</param>
-        /// <returns>The parsed AST tree</returns>
         public AST.Program ProduceAST(string sourceCode, string fileName)
         {
+            // Lex the sourcecode
             tokens = Lexer.Lexer.Tokenize(sourceCode, fileName);
 
-            AST.Program program = new();
+            AST.Program program = new AST.Program(tokens[0].Location);
 
-            // Parse until end of file
-            while (NotEOF())
+            // Parse until EOF is reached
+            while (At().Type != TokenType.EOF)
             {
-                // Remove random semi colons
-                if (At().TokenType == TokenType.Semicolon)
+                // Remove random semicolons
+                if (At().Type == TokenType.Semicolon)
                 {
                     Eat();
                     continue;
                 }
 
-                // Get value
-                Expression value = ParseControlFlowStatement();
+                // Get expression
+                Expression expression = ParseStatement();
 
-                // Check if require semicolon
-                if (NeedSemiColon(value))
-                {
-                    if (At().TokenType != TokenType.Semicolon)
-                    {
-                        throw new ParserException_new()
-                        {
-                            ErrorCode = Errors.ErrorCode.MissingSemiColon,
-                            Token = At(),
-                        };
-                    }
-                }
-
-                program.Body.Add(value);
+                NeedsSemiColon(expression);
+                program.Body.Add(expression);
             }
 
             return program;
         }
-
-        /// <summary>
-        /// These are statements which MUST be on their own and cannot be used in any sort of way as a value
-        /// </summary>
-        /// <returns></returns>
-        private Expression ParseControlFlowStatement()
-        {
-            return At().TokenType switch
-            {
-                TokenType.Let => ParseVariableDeclaration(),
-                TokenType.Event => ParseEventStatement(),
-                TokenType.Const => ParseVariableDeclaration(),
-                TokenType.If => ParseIfStatement(),
-                TokenType.While => ParseWhileStatement(),
-                TokenType.For => ParseForStatement(),
-                TokenType.Return => ParseReturnStatement(),
-                TokenType.Try => ParseTryStatement(),
-                TokenType.Struct => ParseStructStatement(),
-                TokenType.Import => ParseImportStatement(),
-                TokenType.Export => ParseExportStatement(),
-                TokenType.Switch => ParseSwitchStatement(),
-                // Keywords with no extra info
-                TokenType.Break => new BreakStatement()
-                {
-                    Location = Eat().Location
-                },
-                TokenType.Passthrough => new PassthroughStatement()
-                {
-                    Location = Eat().Location
-                },
-                _ => ParseStatement(),
-            };
-        }
-
-        /// <summary>
-        /// These are statements, but CAN be used as a value (in PrimaryExpression)
-        /// </summary>
-        /// <returns></returns>
-        private Expression ParseStatement()
-        {
-            return At().TokenType switch
-            {
-                TokenType.Function => ParseFunctionDeclaration(),
-                _ => ParseExpression(),
-            };
-        }
-
-        /// <summary>
-        /// This switch is when it is used as a statement, like an if statement
-        /// </summary>
-        /// <returns></returns>
-        private Expression ParseSwitchStatement()
-        {
-            Token switchToken = Eat();
-
-            Expression test = ParseExpression();
-
-            // Expect opening body
-            Expect(TokenType.OpenBrace);
-
-            List<SwitchCase> cases = new();
-
-            while (At().TokenType == TokenType.Case || At().TokenType == TokenType.Default)
-            {
-                Token caseToken;
-                Expression caseTest = new Expression();
-                bool isDefault = false;
-
-                if (At().TokenType == TokenType.Case)
-                {
-                    // Expect "case"
-                    caseToken = Expect(TokenType.Case);
-
-                    // Expect test
-                    caseTest = ParseExpression();
-                } else
-                {
-                    caseToken = Expect(TokenType.Default);
-                    isDefault = true;
-                }
-
-                // Expect:
-                Expect(TokenType.Colon);
-
-                BlockStatement body = new();
-
-                do
-                {
-                    // Get value
-                    Expression expr = ParseControlFlowStatement();
-
-                    // Check if require semicolon
-                    if (NeedSemiColon(expr))
-                    {
-                        if (At().TokenType != TokenType.Semicolon)
-                        {
-                            throw new ParserException_new()
-                            {
-                                ErrorCode = Errors.ErrorCode.MissingSemiColon,
-                                Token = At(),
-                            };
-                        }
-                    }
-
-                    Eat();
-
-                    body.Body.Add(expr);
-                } while (At().TokenType != TokenType.Case && At().TokenType != TokenType.CloseBrace && At().TokenType != TokenType.Default);
-
-                cases.Add(new SwitchCase()
-                {
-                    Test = caseTest,
-                    Success = body,
-                    Location = caseToken.Location,
-                    IsDefault = isDefault
-                });
-            }
-
-            // Expect closing body
-            Expect(TokenType.CloseBrace);
-
-            return new SwitchStatement()
-            {
-                Cases = cases,
-                Test = test,
-                Location = switchToken.Location
-            };
-        }
-
-        /*
-         * STATEMENTS - CONTROL FLOW
-         */
-        private Expression ParseStructStatement()
-        {
-            Token structToken = Eat();
-
-            // Identifier name for struct
-            Token structName = Expect(TokenType.Identifier, "Expected struct name");
-
-            Expect(TokenType.OpenBrace, "Expected opening of struct body");
-
-            StructStatement structStatement = new()
-            {
-                Name = structName.Value,
-                Location = structToken.Location
-            };
-
-            // Expect var dec. or func dec.
-            while (At().TokenType != TokenType.CloseBrace)
-            {
-                Expression expr = ParseControlFlowStatement();
-                Console.WriteLine(expr.Kind);
-
-                // Check type
-                if (expr.Kind != Kind.VariableDeclaration && expr.Kind != Kind.FunctionDeclaration)
-                {
-                    throw new ParserException(new()
-                    {
-                        Location = expr.Location,
-                        Error = $"Expected variable declaration or function declaration"
-                    });
-                }
-
-                Expect(TokenType.Semicolon, "Expected semi colon");
-
-                structStatement.Properties.Add(expr);
-            }
-
-            Eat();
-
-            return structStatement;
-        }
-
-        private Expression ParseImportStatement()
-        {
-            Token importToken = Eat();
-
-            // Expect string literal
-            Expression identifier = ParsePrimaryExpression();
-
-            if (identifier.Kind != Kind.StringLiteral)
-            {
-                throw new ParserException_new()
-                {
-                    Location = identifier.Location,
-                    ErrorCode = Errors.ErrorCode.MissingdImportStatementIdentifier,
-                };
-            }
-
-            // Check for as
-            Expression? importAs = null;
-
-            if (At().TokenType == TokenType.As)
-            {
-                Eat();
-                importAs = ParsePrimaryExpression();
-
-                // Check type
-                if (importAs.Kind != Kind.Identifier)
-                {
-                    throw new ParserException_new()
-                    {
-                        Location = importAs.Location,
-                        Error = "Expected identifier here"
-                    };
-                }
-            }
-
-            return new ImportStatement()
-            {
-                Location = importToken.Location,
-                ToImport = identifier,
-                ImportAs = importAs,
-            };
-        }
-
-        /// <summary>
-        /// Syntax:
-        ///     - export [value] as [identifier];
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ParserException"></exception>
-        private Expression ParseExportStatement()
-        {
-            Token exportToken = Eat();
-
-            Expression toExport = ParseStatement();
-
-            Expect(TokenType.As, "Expected as keyword");
-
-            Expression exportAs = ParsePrimaryExpression();
-
-            if (exportAs.Kind != Kind.Identifier)
-            {
-                throw new ParserException(new()
-                {
-                    Location = exportAs.Location,
-                    Error = "Expected identifier here"
-                });
-            }
-
-            return new ExportStatement()
-            {
-                ToExport = toExport,
-                ExportAs = exportAs,
-                Location = exportToken.Location,
-            };
-        }
-
-        /// <summary>
-        /// Syntax:
-        ///     - event [type] [identifier];
-        /// </summary>
-        /// <returns></returns>
-        private Expression ParseEventStatement()
-        {
-            Token eventToken = Eat();
-
-            TypeIdentifierCombo combo = ParseName();
-
-            return new EventDeclarationStatement()
-            {
-                Location = eventToken.Location,
-                Identifier = combo.Identifier,
-                Type = new TypeExpression()
-                {
-                    Type = combo.Type,
-                    IsNullable = combo.isNullable
-                }
-            };
-        }
-
-        /// <summary>
-        /// Syntax:
-        ///     - [modifiers?] var|const [identifier];
-        ///     - [modifiers?] var|const [identifier] = [value];
-        ///     - [modifiers?] var|const [type]? [identifier];
-        ///     - [modifiers?] var|const [type][?] [identifier] = [value];
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ParserException"></exception>
-        private Expression ParseVariableDeclaration()
-        {
-            Token variableDeclarationToken = Eat();
-
-            // Check for modifiers
-            List<Runtime.Values.Modifier> modifiers = new();
-
-            while (At().TokenType == TokenType.Modifier)
-            {
-                Token modifierToken = Eat();
-                Runtime.Values.Modifier mod = (Runtime.Values.Modifier)int.Parse(modifierToken.Value);
-
-                // Check already contains
-                if (modifiers.Contains(mod))
-                {
-                    throw new ParserException_new()
-                    {
-                        Token = modifierToken,
-                        ErrorCode = Errors.ErrorCode.ModifierAlreadyUsed
-                    };
-                }
-
-                modifiers.Add(mod);
-            }
-
-            TypeIdentifierCombo identifierCombo = ParseName();
-
-            // Generate location
-            Location declarationLocation = variableDeclarationToken.Location;
-            if (identifierCombo.Identifier.Location != null)
-                declarationLocation.TokenEnd = identifierCombo.Identifier.Location.TokenEnd;
-
-            bool isConstant = variableDeclarationToken.TokenType == TokenType.Const;
-
-            // Check if this is only a declaration without assignment
-            if (At().TokenType == TokenType.Semicolon || At().TokenType == TokenType.EOF)
-            {
-                // Check if trying to create const without valie
-                if (isConstant)
-                {
-                    throw new ParserException_new()
-                    {
-                        Token = variableDeclarationToken,
-                        ErrorCode = Errors.ErrorCode.UnassignedConstantVariable
-                    };
-                }
-
-                // Create
-                return new VariableDeclaration()
-                {
-                    IsConstant = isConstant,
-                    Identifier = identifierCombo.Identifier,
-                    Type = identifierCombo.Type,
-                    IsTypeNullable = identifierCombo.isNullable,
-                    Location = declarationLocation,
-                    Modifiers = modifiers,
-                };
-            }
-
-            Expect(TokenType.AssignmentOperator, "Expected equals operator", "=");
-
-            return new VariableDeclaration()
-            {
-                Value = ParseExpression(),
-                IsConstant = isConstant,
-                Identifier = identifierCombo.Identifier,
-                Type = identifierCombo.Type,
-                IsTypeNullable = identifierCombo.isNullable,
-                Location = declarationLocation,
-                Modifiers = modifiers,
-            };
-        }
-
-        private Expression ParseIfStatement()
-        {
-            Eat();
-
-            // Dissalow open-brace
-            if (At().TokenType == TokenType.OpenBrace)
-            {
-                throw new ParserException(new()
-                {
-                    Token = At(),
-                    Error = "Unexpected open brace, expected if statement test"
-                });
-            }
-
-            // Get the test
-            Expression test = ParseAssignmentExpression();
-
-            // Parse the body
-            Expression successBody = ParseBlock();
-
-            // Check if there is an alternate
-            Expression? alternate = null;
-
-            if (At().TokenType == TokenType.Else)
-            {
-                Eat();
-
-                // Check what is next
-                if (At().TokenType == TokenType.If)
-                {
-                    alternate = ParseIfStatement();
-                }
-                else if (At().TokenType == TokenType.OpenBrace)
-                {
-                    alternate = ParseBlock();
-                }
-                else throw new ParserException(new()
-                {
-                    Token = At(),
-                    Error = $"Cannot use token of type {At().TokenType} with an else statement"
-                });
-            }
-
-            return new IfStatement()
-            {
-                Success = successBody,
-                Alternate = alternate,
-                Test = test,
-            };
-        }
-
-        private Expression ParseReturnStatement()
-        {
-            Token returnToken = Eat();
-            Expression? value = At().TokenType != TokenType.Semicolon ? ParseExpression() : null;
-
-            return new ReturnStatement()
-            {
-                Location = returnToken.Location,
-                Value = value,
-            };
-        }
-
-        private Expression ParseWhileStatement()
-        {
-            Token whileToken = Eat();
-
-            // Dissalow open-brace
-            if (At().TokenType == TokenType.OpenBrace)
-            {
-                throw new ParserException(new()
-                {
-                    Token = At(),
-                    Error = "Unexpected open brace, expected while test"
-                });
-            }
-
-            // Get the test
-            Expression test = ParseAssignmentExpression();
-            Expression body = ParseBlock();
-
-            return new WhileStatement()
-            {
-                Test = test,
-                Body = body,
-                Location = whileToken.Location
-            };
-        }
-
-        private Expression ParseForStatement()
-        {
-            Token forToken = Eat();
-
-            // Get variable to create
-            Expression identifier = ParsePrimaryExpression();
-
-            if (identifier.Kind != Kind.Identifier)
-            {
-                throw new ParserException(new()
-                {
-                    Location = identifier.Location,
-                    Error = "Expected identifier"
-                });
-            }
-
-            Expect(TokenType.ForEachIn, $"Expected {Operators.SingleOperators["ForEachIn"].Symbol} operator for for-each loop");
-
-            // Value to enumerate
-            Expression valueToEnumerate = ParseAdditiveExpression();
-
-            // Expect body
-            Expression body = ParseBlock();
-
-            // Create
-            return new ForEachStatement()
-            {
-                Identifier = identifier,
-                ValueToEnumerate = valueToEnumerate,
-                Location = forToken.Location,
-                Body = body,
-            };
-        }
-
-        public Expression ParseTryStatement()
-        {
-            Token tryToken = Eat();
-
-            Expression body = new();
-
-            // Get the body
-            if (At().TokenType == TokenType.OpenBrace)
-            {
-                body = ParseBlock();
-            }
-            else
-            {
-                body = ParseExpression();
-                Expect(TokenType.Semicolon, "Expected semi colon");
-            }
-
-            Expression? catchBody = null;
-            Expression? createident = null;
-
-            // Check for catch
-            if (At().TokenType == TokenType.Catch)
-            {
-                Token catchToken = Eat();
-
-                // Only allow if body is block
-                if (body.Kind != Kind.BlockStatement)
-                {
-                    throw new ParserException(new()
-                    {
-                        Location = catchToken.Location,
-                        Error = $"Can only use try-catch when body is a block statement, got {body.Kind} as body"
-                    });
-                }
-
-                // Check if there is ident
-                if (At().TokenType == TokenType.Identifier)
-                {
-                    createident = ParsePrimaryExpression();
-                }
-
-                catchBody = ParseBlock();
-            }
-
-            return new TryStatement()
-            {
-                Body = body,
-                CatchBody = catchBody,
-                Location = tryToken.Location,
-                IdentifierToCreate = createident,
-            };
-        }
-
-        /*
-         * STATEMENTS - NOT CONTROL FLOW
-         */
-        private Expression ParseFunctionDeclaration()
-        {
-            Token functionKeywordToken = Eat();
-
-            Expression? functionNameToken = null;
-            TypeExpression returnType = new TypeExpression()
-            {
-                IsNullable = true,
-                Type = Runtime.Values.ValueType.Any
-            };
-
-            if (At().TokenType != TokenType.OpenParan)
-            {
-                TypeIdentifierCombo combo = ParseName();
-                functionNameToken = combo.Identifier;
-                returnType = new TypeExpression()
-                {
-                    IsNullable = combo.isNullable,
-                    Type = combo.Type
-                };
-            }
-
-            // Parse parameters
-            /*List<TypeIdentifierCombo> typeIdentifiers = new();
-
-            while (At().TokenType != TokenType.CloseParan)
-            {
-                TypeIdentifierCombo combo = ParseName();
-                typeIdentifiers.Add(combo);
-            }*/
-            List<Expression> parameters = ParseArguments();
-            /*List<Expression> parameters = new();
-
-            foreach (TypeIdentifierCombo paran in typeIdentifiers)
-            {
-                parameters.Add(new Identifier()
-                {
-                    Symbol = paran.Identifier.Symbol
-                });
-            }*/
-
-            Expression body = ParseBlock();
-
-            return new FunctionDeclaration()
-            {
-                Name = functionNameToken,
-                Parameters = parameters,
-                Body = body,
-                Location = functionKeywordToken.Location,
-                ReturnType = returnType
-            };
-        }
-
-        /*
-         * HELPERS
-         */
-        private Expression ParseBlock()
-        {
-            Expect(TokenType.OpenBrace, "Expected opening of body");
-            List<Expression> body = new();
-
-            while (At().TokenType != TokenType.CloseBrace && At().TokenType != TokenType.EOF)
-            {
-                Expression value = ParseControlFlowStatement();
-                body.Add(value);
-
-                if (NeedSemiColon(value))
-                    Expect(TokenType.Semicolon, "Expected semi colon");
-            }
-
-            Expect(TokenType.CloseBrace, "Expected closing of body");
-
-            return new BlockStatement()
-            {
-                Body = body,
-            };
-        }
-
-        private TypeExpression ParseType()
-        {
-            TypeExpression expr = new TypeExpression();
-
-            // Get the type
-            expr.Type = (Runtime.Values.ValueType)int.Parse(Expect(TokenType.Type).Value);
-
-            // Check if nullable
-            if (At().TokenType == TokenType.QuestionMark)
-            {
-                Eat();
-                expr.IsNullable = true;
-            }
-
-            return expr;
-        }
-
-        /// <summary>
-        /// Parses a type + name combo, e.g. int[]? a
-        /// </summary>
-        /// <returns></returns>
-        private TypeIdentifierCombo ParseName()
-        {
-            Runtime.Values.ValueType type = Runtime.Values.ValueType.Any;
-            bool isNullable = false;
-            Token identifier;
-
-            // Check for type
-            if (At().TokenType == TokenType.Type)
-            {
-                string t = Eat().Value;
-                type = (Runtime.Values.ValueType)int.Parse(t);
-
-                // Check if nullable
-                if (At().TokenType == TokenType.QuestionMark)
-                {
-                    Eat();
-                    isNullable = true;
-                }
-            }
-
-            // Expect identifier now
-            identifier = Expect(TokenType.Identifier, "Expected identifier");
-
-            Identifier ident = new()
-            {
-                Location = identifier.Location,
-                Symbol = identifier.Value,
-            };
-
-            return new TypeIdentifierCombo(ident, type, isNullable);
-        }
-
-        /// <summary>
-        /// Expands a location by taking the start of a and the end of b and combining into one
-        /// </summary>
-        /// <param name="a"></param>
-        /// <param name="b"></param>
-        /// <returns></returns>
-        private static Location? ExpandLocation(Location? a, Location? b)
+       
+        public Location ExpandLocation(Location? a, Location? b)
         {
             if (a != null && b == null) return a;
-            if (a == null || b == null) return null;
+            if (a == null || b == null) return Location.UnknownLocation;
 
             if (a.Line != b.Line)
             {
@@ -816,106 +114,549 @@ namespace Zephyr.Parser
             return a;
         }
 
-        /*
-         * EXPRESSIONS
-         */
-        private Expression ParseExpression()
+        public bool Lookahead(TokenType forWhat, List<TokenType> allowed)
         {
-            return ParsePipeExpression();
-        }
+            int index = 0;
 
-        private Expression ParsePipeExpression()
-        {
-            Expression left = ParseAssignmentExpression();
-
-            if (At().TokenType == TokenType.Pipe)
+            while (index != tokens.Count - 1)
             {
-                PipeExpression finished = new PipeExpression()
-                {
-                    Left = left
-                };
-
-                while (At().TokenType == TokenType.Pipe)
-                {
-                    Token pipeToken = Eat();
-
-                    // Expect call expression cause it can only be a funcion
-                    Expression rightExpr = ParseCallMemberExpression();
-
-                    // Check type
-                    if (rightExpr.Kind != Kind.CallExpression && rightExpr.Kind != Kind.MemberExpression && rightExpr.Kind != Kind.Identifier)
-                    {
-                        throw new ParserException(new()
-                        {
-                            Error = $"Expected call, member or identifier here, got {rightExpr.Kind}",
-                            Location = rightExpr.Location
-                        });
-                    }
-
-                    // Modify
-                    if (At().TokenType == TokenType.Pipe)
-                    {
-                        finished.Left = new PipeExpression()
-                        {
-                            Left = finished.Left,
-                            Right = rightExpr
-                        };
-                    } else
-                    {
-                        finished.Right = rightExpr;
-                    }
-                }
-
-                return finished;
+                if (tokens[index].Type == forWhat)
+                    return true;
+                else if (!allowed.Contains(tokens[index].Type))
+                    return false;
+                index++;
             }
 
-            return left;
+            return false;
+        }
+
+        // ----- Helpers -----
+        private TypeNameCombo ParseName(bool allowVoid = false)
+        {
+            AST.Type type = ParseType(allowVoid);
+            Token name = Expect(TokenType.Identifier, $"Expected an identifier");
+
+            return new TypeNameCombo(type, new Identifier(name.Location, name.Value));
+        }
+
+        private AST.Type ParseType(bool allowVoid = false)
+        {
+            Location typeLocation;
+            bool isStruct = false;
+            Expression? structName = null;
+            Runtime.Values.ValueType type;
+
+            if (At().Type == TokenType.Struct)
+            {
+                typeLocation = Eat().Location;
+                type = Runtime.Values.ValueType.Object;
+                isStruct = true;
+                structName = ParseMemberExpression();
+            } else
+            {
+                Token tok = Expect(TokenType.Type);
+                type = (Runtime.Values.ValueType)int.Parse(tok.Value);
+                typeLocation = tok.Location;
+            }
+
+            //List<AST.Type>? generics = ParseGenericsList();
+
+            // Check if it is nullable
+            bool isNullable = At().Type == TokenType.QuestionMark;
+            if (isNullable) Eat();
+
+            bool isArray = false;
+            int arrayDepth = 0;
+
+            // Check if it is an array type
+            while (At().Type == TokenType.OpenSquare)
+            {
+                Eat();
+                Expect(TokenType.CloseSquare);
+                isArray = true;
+                arrayDepth++;
+            }
+
+            if (allowVoid == false && type == Runtime.Values.ValueType.Void)
+                throw new RuntimeException($"Cannot use void here", typeLocation);
+
+            return new AST.Type(type, isNullable, typeLocation)
+            {
+                IsArray = isArray,
+                ArrayDepth = arrayDepth,
+                IsStruct = isStruct,
+                StructIdentifier = structName,
+                GenericsList = null,
+            };
+        }
+
+        private Expression ParseBlock()
+        {
+            if (At().Type != TokenType.OpenBrace)
+            {
+                // Parse single expr
+                BlockStatement stmt = new BlockStatement(At().Location, new List<Expression>() { ParseStatement() });
+                NeedsSemiColon(stmt.Body[0]);
+                Eat();
+                return stmt;
+            }
+
+            Token start = Expect(TokenType.OpenBrace, "Expected opening of body");
+
+            List<Expression> body = new List<Expression>();
+
+            while (At().Type != TokenType.CloseBrace && At().Type != TokenType.EOF)
+            {
+                // Remove random semicolons
+                if (At().Type == TokenType.Semicolon)
+                {
+                    Eat();
+                    continue;
+                }
+
+                Expression value = ParseStatement();
+                body.Add(value);
+
+                NeedsSemiColon(value);
+            }
+
+            Expect(TokenType.CloseBrace, "Expected closing of body");
+
+            return new BlockStatement(start.Location, body);
+        }
+
+        private Expression ExpectValueStatement()
+        {
+            return At().Type switch
+            {
+                TokenType.Var => ParseVariableDeclaration(),
+                TokenType.Function => ParseFunctionDeclaration(),
+                TokenType.Struct => ParseStructDeclaration(),
+                _ => throw new ParserException($"Expected a value-type statement here (var, function, etc.)", At().Location)
+            };
+        }
+
+        private Identifier CreateIdentifier(Token token)
+        {
+            return new Identifier(token.Location, token.Value);
+        }
+
+        private List<FunctionParameter> ParseParameterList()
+        {
+            Expect(TokenType.OpenParenthesis, "Expected opening of function argument list");
+
+            List<FunctionParameter> parameters = new List<FunctionParameter>();
+
+            if (At().Type == TokenType.Params)
+            {
+                Token paramToken = Eat();
+                AST.Type type = ParseType();
+
+                // Expect atleast 1 array depth
+                if (type.ArrayDepth < 1)
+                    throw new ParserException($"The params parameter type must have an array depth of at least one, try {type.TypeName}[]", type.Location);
+
+                Identifier name = CreateIdentifier(Expect(TokenType.Identifier));
+                Expect(TokenType.CloseParenthesis);
+                parameters.Add(new FunctionParameter(paramToken.Location, name, type)
+                {
+                    IsParams = true,
+                });
+                return parameters;
+            }
+
+            while (At().Type != TokenType.CloseParenthesis)
+            {
+                AST.Type type = ParseType();
+                Token name = Expect(TokenType.Identifier, $"Expected parameter name");
+
+                parameters.Add(new FunctionParameter(name.Location, CreateIdentifier(name), type));
+
+                if (At().Type != TokenType.Comma)
+                    break;
+                else Eat();
+            }
+
+            Expect(TokenType.CloseParenthesis, "Expected closing of function argument list");
+
+            return parameters;
+        }
+
+        private List<Expression> ParseArgumentList()
+        {
+            Expect(TokenType.OpenParenthesis);
+
+            List<Expression> parameters = new List<Expression>();
+
+            while (At().Type != TokenType.CloseParenthesis)
+            {
+                parameters.Add(ParseExpression());
+
+                if (At().Type != TokenType.Comma) break;
+                else Eat();
+            }
+
+            Expect(TokenType.CloseParenthesis);
+
+            return parameters;
+        }
+
+        private List<AST.Type>? ParseGenericsList()
+        {
+            // Check if it is a <
+            if (At().Type == TokenType.ComparisonOperator && At().Value == Lexer.Syntax.Operators.ComparisonOperators["LessThan"].Symbol)
+            {
+                Token startToken = Eat();
+                List<AST.Type> generics = new List<AST.Type>();
+
+                while (At().Type != TokenType.ComparisonOperator && At().Value != Lexer.Syntax.Operators.ComparisonOperators["GreaterThan"].Symbol && At().Type != TokenType.EOF)
+                {
+                    AST.Type type = ParseType();
+                    generics.Add(type);
+
+                    if (At().Type != TokenType.Comma) break;
+                    Eat();
+                }
+
+                ExpectExact(TokenType.ComparisonOperator, Operators.ComparisonOperators["GreaterThan"].Symbol, "Expected closing of generic list");
+
+                return generics;
+            }
+
+            return null;
+        }
+
+        private Expression ParseIndexer()
+        {
+            Expect(TokenType.OpenSquare);
+            Expression expr = ParseExpression();
+            Expect(TokenType.CloseSquare);
+            return expr;
+        }
+
+        // ----- Statements -----
+        private Expression ParseStatement()
+        {
+            return At().Type switch
+            {
+                TokenType.If => ParseIfStatement(),
+                TokenType.Loop => ParseLoopStatement(),
+                TokenType.Echo => ParseEchoStatement(),
+                TokenType.Break => new BreakStatement(Eat().Location),
+                TokenType.Continue => new ContinueStatement(Eat().Location),
+                TokenType.Return => new ReturnStatement(Eat().Location, ParseExpression()),
+                TokenType.Modifier => ParseModifierStatement(),
+                TokenType.Var => ParseVariableDeclaration(),
+                TokenType.Function => ParseFunctionDeclaration(),
+                TokenType.Import => ParseImportStatement(),
+                TokenType.Export => ParseExportStatement(),
+                TokenType.From => ParseImportStatement(),
+                TokenType.Struct => ParseStructDeclaration(),
+                TokenType.For => ParseForStatement(),
+                TokenType.Try => ParseTryStatement(),
+                TokenType.Decorator => ParseDecorator(),
+                _ => ParseExpression()
+            };
+        }
+
+        private Expression ParseDecorator()
+        {
+            Token decoratorToken = Eat();
+
+            // Get the name of the function to call
+            Expression name = ParseCallExpression();
+
+            // Expect an identifier
+            if (name.Kind != Kind.Identifier)
+            {
+                throw new ParserException($"Expected identifier as decorator name", name.Location);
+            }
+
+            // Get the body
+            Expression body = ParseStatement();
+
+            // Expect function
+            if (body.Kind != Kind.FunctionDeclaration && body.Kind != Kind.DecoratorApplierStatement && body.Kind != Kind.ApplyModifierStatement)
+            {
+                throw new ParserException($"Expected a function as the decorator body", body.Location);
+            }
+
+            // Done
+            return new DecoratorApplierStatement(decoratorToken.Location, name, body);
+        }
+
+        private Expression ParseTryStatement()
+        {
+            Token token = Eat();
+
+            // Parse body
+            Expression body = ParseBlock();
+
+            // Check if it contains a catch
+            Expression? catchBody = null;
+            Identifier? catchIdent = null;
+
+            if (At().Type == TokenType.Catch)
+            {
+                Eat();
+
+                // Check for identifier to be declared
+                if (At().Type == TokenType.Identifier)
+                    catchIdent = CreateIdentifier(Eat());
+
+                catchBody = ParseBlock();
+            }
+
+            return new TryStatement(token.Location, body, catchBody, catchIdent);
+        }
+
+        private Expression ParseForStatement()
+        {
+            Token forToken = Eat();
+
+            // Check if it is in a for in loop
+            if (Lookahead(TokenType.In, new List<TokenType> { TokenType.Type, TokenType.Identifier, TokenType.Comma }))
+            {
+                // It is a for in loop
+                TypeNameCombo combo = ParseName();
+                TypeNameCombo? index = null;
+
+                // Check if there is a index
+                if (At().Type == TokenType.Comma)
+                {
+                    Eat();
+                    index = ParseName();
+                }
+
+                Token inToken = Expect(TokenType.In);
+                Expression inWhat = ParseExpression();
+                Expression body = ParseBlock();
+
+                ForEachStatement stmt = new ForEachStatement(forToken.Location, combo, inWhat, body)
+                {
+                    DeclarationIndex = index,
+                };
+                return stmt;
+            }
+
+            Expression declaration = At().Type == TokenType.Var ? ParseVariableDeclaration() : ParseExpression();
+            Expect(TokenType.Semicolon);
+            Expression test = ParseExpression();
+            Expect(TokenType.Semicolon);
+            Expression increment = ParseExpression();
+            Expression b = ParseBlock();
+
+            return new ForStatement(forToken.Location, declaration, test, increment, b);
+        }
+
+        private Expression ParseModifierStatement()
+        {
+            Token token = At();
+            Modifier modifier = (Modifier)int.Parse(Eat().Value);
+            Expression value = At().Type == TokenType.Modifier
+                ? ParseModifierStatement()
+                : ExpectValueStatement();
+            NeedsSemiColon(value);
+
+            return new ApplyModifierStatement(token.Location, value, modifier);
+        }
+
+        private Expression ParseEchoStatement()
+        {
+            Token echoToken = Eat();
+
+            return new EchoStatement(echoToken.Location, ParseExpression());
+        }
+
+        private Expression ParseIfStatement()
+        {
+            Token ifToken = Eat();
+
+            // Dissallow open brace
+            if (At().Type == TokenType.OpenBrace)
+            {
+                throw new ParserException($"Expected if test here", At().Location);
+            }
+
+            // Get the test
+            Expression test = ParseExpression();
+
+            // Parse the body
+            Expression successBody = ParseBlock();
+
+            Expression? alternate = null;
+
+            //Check if there is an alternative
+            if (At().Type == TokenType.Else)
+            {
+                Eat();
+
+                // Check if the next is else if
+                if (At().Type == TokenType.If)
+                {
+                    alternate = ParseIfStatement();
+                }
+
+                // Check for body
+                else
+                {
+                    alternate = ParseBlock();
+                }
+            }
+
+            // Done
+            return new IfStatement(ifToken.Location, test, successBody)
+            {
+                Alternate = alternate
+            };
+        }
+
+        private Expression ParseLoopStatement()
+        {
+            Token loopToken = Expect(TokenType.Loop);
+            Expression body = ParseBlock();
+
+            return new LoopStatement(loopToken.Location, body);
+        }
+
+        private Expression ParseVariableDeclaration()
+        {
+            // Get [var type ident]
+            Token varToken = Eat();
+            TypeNameCombo combo = ParseName();
+
+            // Expect =
+            Token assignmentOperator = ExpectExact(
+                TokenType.AssignmentOperator,
+                Operators.GetOperatorByName("NormalAssignment").Symbol
+            );
+
+            // Get value
+            Expression value = ParseExpression();
+
+            return new VariableDeclaration(varToken.Location, combo.Identifier, combo.Type, value);
+        }
+
+        private Expression ParseFunctionDeclaration()
+        {
+            // Get [func type ident]
+            Token functionToken = Eat();
+            TypeNameCombo combo = ParseName(true);
+            List<FunctionParameter> parameters = ParseParameterList();
+            Expression body = ParseBlock();
+
+            return new FunctionDeclaration(functionToken.Location, combo.Identifier, combo.Type, parameters, body);
+        }
+
+        private Expression ParseStructDeclaration()
+        {
+            Token structToken = Eat();
+            Token structName = Expect(TokenType.Identifier);
+
+            Expect(TokenType.OpenBrace, $"Expected opening of struct body");
+
+            Dictionary<Identifier, AST.Type> fields = new Dictionary<Identifier, AST.Type>();
+
+            while (At().Type != TokenType.CloseBrace && At().Type != TokenType.EOF)
+            {
+                TypeNameCombo combo = ParseName();
+                fields.Add(combo.Identifier, combo.Type);
+                Expect(TokenType.Semicolon);
+            }
+
+            Expect(TokenType.CloseBrace);
+
+            return new StructDeclaration(structToken.Location, CreateIdentifier(structName), fields);
+        }
+
+        private Expression ParseImportStatement()
+        {
+            // import "xxx" as x;
+            if (At().Type == TokenType.Import)
+            {
+                Token importToken = Eat();
+                Token stringToken = Expect(TokenType.String, $"Expected string containing filename to import");
+                Token atToken = Expect(TokenType.As);
+                Token identifier = Expect(TokenType.Identifier, $"Expected identifier to import as");
+
+                return new ImportStatement(importToken.Location, new StringLiteral(stringToken.Location, stringToken.Value), CreateIdentifier(identifier));
+            }
+
+            // from "xxx" import x, x, x
+            else if (At().Type == TokenType.From)
+            {
+                Token fromToken = Eat();
+                Token stringToken = Expect(TokenType.String, $"Expected string containing filename to import");
+                Token importToken = Expect(TokenType.Import);
+                List<Identifier> list = new List<Identifier>();
+
+                while (At().Type != TokenType.Semicolon && At().Type != TokenType.EOF)
+                {
+                    list.Add(CreateIdentifier(Expect(TokenType.Identifier)));
+                    if (At().Type != TokenType.Comma) break;
+                    Eat();
+                }
+
+                return new ImportStatement(fromToken.Location, new StringLiteral(stringToken.Location, stringToken.Value), list);
+            }
+
+            throw new ParserException($"", Location.UnknownLocation);
+        }
+
+        private Expression ParseExportStatement()
+        {
+            Token exportToken = Eat();
+            Expression after = ParseStatement();
+
+            if ((new[] { Kind.ImportStatement, Kind.Identifier, Kind.VariableDeclaration, Kind.FunctionDeclaration, Kind.ObjectLiteral, Kind.ApplyModifierStatement }).Contains(after.Kind) == false)
+            {
+                throw new RuntimeException($"{after.Kind} cannot be used with export", exportToken.Location);
+            }
+
+            NeedsSemiColon(after);
+
+            return new ExportStatement(exportToken.Location, after);
+        }
+
+        // ----- Expressions -----
+        private Expression ParseExpression()
+        {
+            return ParseAssignmentExpression();
         }
 
         private Expression ParseAssignmentExpression()
         {
-            Expression left = ParserTernaryExpression();
+            Expression left = ParseTernaryExpression();
 
-            // Check if next is assignment operator
-            if (At().TokenType == TokenType.AssignmentOperator)
+            if (At().Type == TokenType.AssignmentOperator)
             {
                 Token operatorToken = Eat();
-                string op = operatorToken.Value;
+                Expression value = ParseAssignmentExpression();
 
-                Expression val = ParseAssignmentExpression();
-
-                return new AssignmentExpression()
-                {
-                    Assignee = left,
-                    Value = val,
-                    Type = op,
-                    Location = operatorToken.Location
-                };
+                AssignmentExpression expr = new AssignmentExpression(operatorToken.Location, left, operatorToken.Value, value);
+                expr.FullLocation = ExpandLocation(left.Location, value.Location);
+                return expr;
             }
 
             return left;
         }
 
-        private Expression ParserTernaryExpression()
+        private Expression ParseTernaryExpression()
         {
             Expression left = ParseLogicalExpression();
 
-            if (At().TokenType == TokenType.QuestionMark)
+            // Check for ?
+            if (At().Type == TokenType.QuestionMark)
             {
-                Eat();
-                Expression success = ParseLogicalExpression();
+                Token startToken = Eat();
 
-                Expect(TokenType.Colon, "Expected : for ternary expression");
+                Expression success = ParseTernaryExpression();
 
-                Expression alternate = ParseLogicalExpression();
+                Expect(TokenType.Colon, $"Expected alternate for ternary");
 
-                return new TernaryExpression()
-                {
-                    Test = left,
-                    Success = success,
-                    Alternate = alternate,
-                    Location = ExpandLocation(left.Location, alternate.Location)
-                };
+                Expression alternate = ParseTernaryExpression();
+
+                return new TernaryExpression(startToken.Location, success, left, alternate);
             }
 
             return left;
@@ -925,99 +666,27 @@ namespace Zephyr.Parser
         {
             Expression left = ParseComparisonExpression();
 
-            // Check if next is logical
-            if (At().TokenType == TokenType.LogicalOperator)
+            if (At().Type == TokenType.LogicalOperator)
             {
-                string op = Eat().Value;
+                Token operatorToken = Eat();
                 Expression right = ParseLogicalExpression();
 
-                return new LogicalExpression()
-                {
-                    Left = left,
-                    Right = right,
-                    Operator = op
-                };
+                return new LogicalExpression(operatorToken.Location, left, operatorToken.Value, right);
             }
 
-            // It is not
             return left;
         }
 
         private Expression ParseComparisonExpression()
         {
-            Expression left = ParseAdditiveExpression();
-
-            // Check if next is comparison
-            if (At().TokenType == TokenType.ComparisonOperator)
-            {
-                Token operatorToken = Eat();
-                string op = operatorToken.Value;
-
-                Expression right = At().TokenType == TokenType.ComparisonOperator
-                    ? ParseComparisonExpression()
-                    : ParseAdditiveExpression();
-
-                return new ComparisonExpression()
-                {
-                    Left = left,
-                    Right = right,
-                    Operator = op,
-                    Location = operatorToken.Location
-                };
-            }
-
-            // It is not a comparison expression
-            return left;
-        }
-
-        private Expression ParseAdditiveExpression()
-        {
-            Expression left = ParseMultiplicativeExpression();
-
-            while (
-                At().Value == Operators.ArithmeticOperators["Plus"].Symbol ||
-                At().Value == Operators.ArithmeticOperators["Subtract"].Symbol
-            )
-            {
-                Token operatorToken = Eat();
-                string op = operatorToken.Value;
-                Expression right = ParseMultiplicativeExpression();
-
-                left = new BinaryExpression()
-                {
-                    Right = right,
-                    Left = left,
-                    Operator = op,
-                    Location = operatorToken.Location,
-                };
-            }
-
-            return left;
-        }
-
-        private Expression ParseMultiplicativeExpression()
-        {
             Expression left = ParseCastExpression();
 
-            while (
-                At().Value == Operators.ArithmeticOperators["Multiply"].Symbol ||
-                At().Value == Operators.ArithmeticOperators["Divide"].Symbol ||
-                At().Value == Operators.ArithmeticOperators["Modulus"].Symbol ||
-                At().Value == Operators.ArithmeticOperators["Power"].Symbol ||
-                At().Value == Operators.BinaryOperators["Coalesence"].Symbol
-            )
+            if (At().Type == TokenType.ComparisonOperator)
             {
                 Token operatorToken = Eat();
-                string op = operatorToken.Value;
-                Expression right = ParseCastExpression();
+                Expression right = ParseComparisonExpression();
 
-                left = new BinaryExpression()
-                {
-                    Right = right,
-                    Left = left,
-                    Operator = op,
-                    Location = operatorToken.Location,
-                };
+                return new ComparisonExpression(operatorToken.Location, left, operatorToken.Value, right);
             }
 
             return left;
@@ -1025,20 +694,57 @@ namespace Zephyr.Parser
 
         private Expression ParseCastExpression()
         {
+            Expression left = ParsePipeExpression();
+
+            while (At().Type == TokenType.CastOperator)
+            {
+                Token castOperator = Eat();
+
+                AST.Type type = ParseType();
+
+                left = new CastExpression(castOperator.Location, left, type);
+            }
+            
+            return left;
+        }
+
+        private Expression ParsePipeExpression()
+        {
+            Expression left = ParseInExpression();
+
+            while (At().Type == TokenType.Pipe)
+            {
+                Token pipeOperator = Eat();
+                
+                // Check if it is a . for quick member expression
+                if (At().Type == TokenType.Dot)
+                {
+                    Expression expr = ParseMemberExpression(left);
+                    left = expr;
+                } else
+                {
+                    Expression expr = ParseCallExpression();
+
+                    if (expr.Kind != Kind.CallExpression && expr.Kind != Kind.MemberExpression && expr.Kind != Kind.Identifier)
+                        throw new ParserException($"Expected call, member or identifier expression", expr.Location);
+                    left = new PipeExpression(pipeOperator.Location, left, expr);
+                }
+            }
+
+            return left;
+        }
+
+        private Expression ParseInExpression()
+        {
             Expression left = ParseRangeExpression();
 
-            if (At().TokenType == TokenType.Cast)
+            if (At().Type == TokenType.In)
             {
-                Token castToken = Eat();
+                Token inToken = Eat();
 
-                Token right = Expect(TokenType.Type, "Expected type");
+                Expression right = ParseRangeExpression();
 
-                return new CastExpression()
-                {
-                    Type = (Runtime.Values.ValueType)int.Parse(right.Value),
-                    Left = left,
-                    Location = castToken.Location
-                };
+                return new InExpression(inToken.Location, left, right);
             }
 
             return left;
@@ -1046,40 +752,74 @@ namespace Zephyr.Parser
 
         private Expression ParseRangeExpression()
         {
+            Expression left = ParseAdditiveExpression();
+
+            // Check if it is a range
+            if (At().Type == TokenType.Range || At().Type == TokenType.RangeUninclusive)
+            {
+                Token rangeOperator = Eat();
+
+                Expression right = ParseAdditiveExpression();
+                Expression? step = null;
+
+                if (At().Type == TokenType.Step)
+                {
+                    Eat();
+                    step = ParseAdditiveExpression();
+                }
+
+                return new RangeExpression(rangeOperator.Location, left, right)
+                {
+                    Step = step,
+                    Uninclusive = rangeOperator.Type == TokenType.RangeUninclusive
+                };
+            }
+
+            return left;
+        }
+
+        private Expression ParseAdditiveExpression()
+        {
+
+            Expression left = ParseMultiplicativeExpression();
+
+            while (ValidAdditiveOperators.Contains(At().Value))
+            {
+                Token operatorToken = Eat();
+                Expression right = ParseMultiplicativeExpression();
+
+                // Check if both are literal
+                if (left.Kind == Kind.NumericLiteral && right.Kind == Kind.NumericLiteral)
+                {
+                    double l = ((NumericLiteral)left).Value;
+                    double r = ((NumericLiteral)right).Value;
+
+                    if (operatorToken.Value == Operators.ArithmeticOperators["Plus"].Symbol)
+                        left = new NumericLiteral(ExpandLocation(left.Location, right.Location), l + r);
+                    else if (operatorToken.Value == Operators.ArithmeticOperators["Minus"].Symbol)
+                        left = new NumericLiteral(ExpandLocation(left.Location, right.Location), l - r);
+                    else
+                        left = new BinaryExpression(operatorToken.Location, left, right, operatorToken.Value);
+                }
+
+                // Update left
+                else left = new BinaryExpression(operatorToken.Location, left, right, operatorToken.Value);
+            }
+
+            return left;
+        }
+
+        private Expression ParseMultiplicativeExpression()
+        {
             Expression left = ParseUnaryExpression();
 
-            if (At().TokenType == TokenType.DoubleDot || At().TokenType == TokenType.DoubleDotUninclusive)
+            while (ValidMultiplicativeOperators.Contains(At().Value))
             {
-                bool uninclusive = At().TokenType == TokenType.DoubleDotUninclusive;
-                Eat();
+                Token operatorToken = Eat();
+                Expression right = ParseUnaryExpression();
 
-                Expression right = new();
-                Expression? middle = null;
-
-                Expression temp = ParseUnaryExpression();
-
-                // Check whether or not it has a step
-                if (At().TokenType == TokenType.DoubleDot || At().TokenType == TokenType.DoubleDotUninclusive)
-                {
-                    uninclusive = At().TokenType == TokenType.DoubleDotUninclusive;
-                    Eat();
-
-                    middle = temp;
-                    right = ParseUnaryExpression();
-                }
-                else
-                {
-                    right = temp;
-                }
-
-                return new RangeExpression()
-                {
-                    Start = left,
-                    Step = middle,
-                    End = right,
-                    Location = ExpandLocation(left.Location, right.Location),
-                    Uninclusive = uninclusive,
-                };
+                // Updat left
+                left = new BinaryExpression(operatorToken.Location, left, right, operatorToken.Value);
             }
 
             return left;
@@ -1087,379 +827,349 @@ namespace Zephyr.Parser
 
         private Expression ParseUnaryExpression()
         {
-            // Check if current is unary
-            if (At().TokenType == TokenType.UnaryOperator)
+            TokenType[] unaryOperatorList = new TokenType[] { TokenType.UnaryOperator, TokenType.BinaryOperator };
+
+            // Check if current token is unary
+            if (unaryOperatorList.Contains(At().Type))
             {
-                Token operatorToken = Eat();
-
-                // Get the righ hand side
-                Expression right = At().TokenType == TokenType.UnaryOperator
-                    ? ParseUnaryExpression()
-                    : ParseMemberExpression();
-
-                // Done
-                return new UnaryExpression()
+                // Check if it is a binary and if it is valid unary binary
+                if (At().Type == TokenType.BinaryOperator)
                 {
-                    Operator = operatorToken.Value,
-                    Right = right,
-                    Location = operatorToken.Location,
-                };
-            }
-
-            // Get the value
-            Expression value = ParseCallMemberExpression();
-
-            // Check if the next value is a unary
-            if (At().TokenType == TokenType.UnaryOperator)
-            {
-                Token operatorToken = Eat();
-                string op = operatorToken.Value;
-
-                // Check if a unary is allowed after
-                if (op != Operators.UnaryOperators["Increment"].Symbol &&
-                    op != Operators.UnaryOperators["Decrement"].Symbol)
-                {
-                    throw new ParserException(new()
+                    // Check if this binary op is allowed to be unary
+                    if (new[] { Operators.ArithmeticOperators["Minus"].Symbol, Operators.ArithmeticOperators["Plus"].Symbol }.Contains(At().Value) == false)
                     {
-                        Token = operatorToken,
-                        Error = $"Operator {op} cannot be used as a postfix unary operator"
-                    });
+                        throw new LexerException($"Cannot use this binary operator as a unary operator", At().Location);
+                    }
                 }
 
-                // It is a right handed uanry
-                return new UnaryRightExpression()
-                {
-                    Left = value,
-                    Operator = op,
-                    Location = operatorToken.Location,
-                };
+                Token unaryOperator = Eat();
+
+                // Get the right hand side value
+                Expression right = unaryOperatorList.Contains(At().Type)
+                    ? ParseUnaryExpression()
+                    : ParseAwaitExpression();
+
+                return new UnaryExpression(unaryOperator.Location, right, unaryOperator.Value);
             }
 
-            // It is not a unary
-            return value;
-        }
+            Expression left = ParseAwaitExpression();
 
-        /*private Expression ParseIndexerExpression()
-        {
-            Expression left = ParseCallMemberExpression();
-
-            if (At().TokenType == TokenType.OpenSquare)
+            // Check if there is a unary on the right
+            if (At().Type == TokenType.UnaryOperator)
             {
-                Eat();
-                Expression indexer = ParseExpression();
-                Expect(TokenType.CloseSquare, "Expected closing of indexer");
-
-                return new IndexerExpression()
-                {
-                    Left = left,
-                    Indexer = indexer
-                };
+                Token oper = Eat();
+                return new UnaryRightExpression(oper.Location, left, oper.Value);
             }
 
             return left;
-        }*/
-
-        private Expression ParseCallMemberExpression(bool noStart = false, Expression? setObj = null)
-        {
-            Expression member = ParseMemberExpression(noStart, setObj);
-
-            if (At().TokenType == TokenType.OpenParan)
-            {
-                Expression expr = ParseCallExpression(member);
-
-                // Check for trailing dots
-                if (At().TokenType == TokenType.Dot)
-                {
-                    Expression expr2 = ParseCallMemberExpression(false, setObj = expr);
-                    return expr2;
-                } else
-                {
-                    return expr;
-                }
-            }
-
-            return member;
         }
 
-        private Expression ParseMemberExpression(bool skipObj = false, Expression? setObj = null)
+        private Expression ParseAwaitExpression()
         {
-            Expression obj = skipObj == false ? setObj != null ? setObj : ParsePrimaryExpression() : new();
-
-            Location? fullLocation = obj.Location;
-
-            while (At().TokenType == TokenType.Dot || At().TokenType == TokenType.OpenSquare)
+            if (At().Type == TokenType.Await)
             {
-                Token op = Eat();
-                Expression property;
-                bool computed = false;
-                fullLocation = ExpandLocation(fullLocation, op.Location);
+                Token awaitToken = Eat();
+                Expression right = ParseCallExpression();
 
-                // Non computed values (dot.dot.dot)
-                if (op.TokenType == TokenType.Dot)
+                return new AwaitExpression(awaitToken.Location, right)
                 {
-                    computed = false;
-                    property = ParsePrimaryExpression();
-
-                    if (property.Kind != Kind.Identifier)
-                        throw new ParserException(new()
-                        {
-                            Location = property.Location,
-                            Error = $"Expected identifier, but got {property.Kind}"
-                        });
-                    fullLocation = ExpandLocation(fullLocation, property.Location);
-                }
-
-                // Computer values object["value"]
-                else
-                {
-                    computed = true;
-                    property = ParseExpression();
-                    Token endSquare = Expect(TokenType.CloseSquare, "Expected closing square");
-                    fullLocation = ExpandLocation(fullLocation, endSquare.Location);
-                }
-
-                obj = new MemberExpression()
-                {
-                    Object = obj,
-                    IsComputed = computed,
-                    Property = property,
-                    Location = obj.Location,
-                    FullExpressionLocation = fullLocation
+                    FullLocation = ExpandLocation(awaitToken.Location, right.Location)
                 };
             }
 
-            return obj;
+            return ParseCallExpression();
         }
 
-        private Expression ParseCallExpression(Expression caller)
+        private Expression ParseCallExpression(Expression? setLeft = null)
         {
-            CallExpression callExpression = new()
-            {
-                Caller = caller,
-                Arguments = ParseArguments(),
-                FullExpressionLocation = caller.Location,
-            };
+            Expression left = setLeft ?? ParseMemberExpression();
 
-            if (At().TokenType == TokenType.OpenParan)
+            if (At().Type == TokenType.OpenParenthesis)
             {
-                CallExpression temp = (CallExpression)ParseCallExpression(callExpression);
-                callExpression.FullExpressionLocation = ExpandLocation(caller?.FullExpressionLocation, temp?.Location);
-                callExpression = temp;
+                List<Expression> parameters = ParseArgumentList();
+
+                CallExpression expr = new CallExpression(left.Location, left, parameters);
+
+                return At().Type == TokenType.Dot || At().Type == TokenType.OpenSquare ? ParseMemberExpression(expr) : ParseCallExpression(expr);
             }
 
-            return callExpression;
+            return left;
         }
 
-        private List<Expression> ParseArguments()
+        private Expression ParseMemberExpression(Expression? setLeft = null)
         {
-            Expect(TokenType.OpenParan, $"Expected open parenthesis");
+            Expression left = setLeft ?? ParseLambdaExpression();
 
-            List<Expression> args = At().TokenType == TokenType.CloseParan
-                ? new()
-                : ParseArgumentsList();
+            while (At().Type == TokenType.Dot || At().Type == TokenType.OpenSquare)
+            {
+                Expression right;
+                bool isComputed = false;
+                if (At().Type == TokenType.Dot)
+                {
+                    Eat();
+                    right = ParseIdentifier(true);
+                } else if (At().Type == TokenType.OpenSquare)
+                {
+                    right = ParseIndexer();
+                    isComputed = true;
+                } else
+                {
+                    throw new ParserException($"Expected identifier or indexer", At().Location);
+                }
 
-            Expect(TokenType.CloseParan, $"Expected close parenthesis");
+                MemberExpression temp = new MemberExpression(ExpandLocation(left.Location, right.Location), left, right);
+                temp.IsComputed = isComputed;
+                left = temp;
+            }   
 
-            return args;
+            return ParseCallExpression(left);
         }
 
-        private List<Expression> ParseArgumentsList()
+        private Expression ParseLambdaExpression()
         {
-            List<Expression> args = new()
+            // Check for => _
+            if (At().Type == TokenType.Lambda)
             {
-                ParseExpression()
-            };
+                Token lambdaToken = Eat();
+                Expression body;
 
-            while (At().TokenType == TokenType.Comma)
-            {
-                Eat();
-                args.Add(ParseExpression());
+                if (At().Type == TokenType.OpenBrace)
+                    body = ParseBlock();
+                else body = new BlockStatement(
+                    At().Location,
+                    new List<Expression>() {
+                    new ReturnStatement(At().Location, ParseExpression()),
+                    }
+                );
+
+                return new LambdaExpression(lambdaToken.Location, body, new List<Identifier>());
             }
 
-            return args;
+            Expression left = ParseSpreadOperator();
+
+            // Check for lambda
+            if (At().Type == TokenType.Lambda)
+            {
+                Token lambdaToken = Eat();
+                Expression body;
+
+                if (At().Type == TokenType.OpenBrace)
+                    body = ParseBlock();
+                else body = new BlockStatement(
+                    At().Location,
+                    new List<Expression>() {
+                    new ReturnStatement(At().Location, ParseExpression()),
+                    }
+                );
+
+                // Check if x => _
+                if (left.Kind == Kind.Identifier)
+                {
+                    return new LambdaExpression(lambdaToken.Location, body, new List<Identifier>()
+                    {
+                        (Identifier)left,
+                    });
+                } 
+                
+                // Check if x, x, x => _
+                else if (left.Kind == Kind.LambdaArgumentList)
+                {
+                    return new LambdaExpression(lambdaToken.Location, body, ((LambdaArgumentList)left).Arguments);
+                }
+
+                else
+                {
+                    throw new ParserException($"Cannot use {left.Kind} as lambda arguments", left.Location);
+                }
+            }
+
+            if (left.Kind == Kind.LambdaArgumentList)
+                throw new ParserException($"Unexpected lambda argument list", left.Location);
+
+            return left;
+        }
+
+        private Expression ParseSpreadOperator()
+        {
+            if (At().Type == TokenType.Spread)
+            {
+                Token spreadToken = Eat();
+
+                Expression right = ParsePrimaryExpression();
+
+                return new SpreadExpression(spreadToken.Location, right);
+            }
+
+            return ParsePrimaryExpression(); 
+        }
+
+        // ----- Literals -----
+        private Expression ParsePrimaryExpression()
+        {
+            return At().Type switch
+            {
+                TokenType.Number => ParseNumericLiteral(),
+                TokenType.Identifier => ParseIdentifier(),
+                TokenType.OpenPipe => ParseLambdaArgumentList(),
+                TokenType.String => ParseStringLiteral(),
+                TokenType.OpenSquare => ParseArrayLiteral(),
+                TokenType.OpenParenthesis => ParseParenthesisedExpression(),
+                TokenType.OpenBrace => ParseObjectLiteral(),
+                TokenType.Function => ParseFunctionExpression(),
+                _ => throw new ParserException($"Unexpected token: {At().Type}", At().Location)
+            };
+        }
+
+        // ----- Literal parsing functions -----
+        private Expression ParseParenthesisedExpression()
+        {
+            Expect(TokenType.OpenParenthesis);
+
+            Expression expression = ParseExpression();
+
+            Expect(TokenType.CloseParenthesis);
+
+            return expression;
         }
 
         private Expression ParseObjectLiteral()
         {
-            Token openingbrace = Expect(TokenType.OpenBrace, "Expected open brace for object");
+            Token startingToken = Expect(TokenType.OpenBrace);
 
-            List<Property> properties = new();
+            Dictionary<Identifier, Expression> keyValues = new Dictionary<Identifier, Expression>();
+            List<string> identifiersUsed = new List<string>();
 
-            while (this.NotEOF() && At().TokenType != TokenType.CloseBrace)
+            while (At().Type != TokenType.CloseBrace)
             {
-                Token key = Expect(TokenType.Identifier, "Expected key name");
+                // Get the name
+                Token ident;
 
-                // Check for shorthand { key, }
-                if (At().TokenType == TokenType.Comma)
+                if (At().Type == TokenType.Identifier || At().Type == TokenType.String)
+                    ident = Eat();
+                else
+                {
+                    throw new ParserException($"Expected identifier", At().Location);
+                }
+
+                if (identifiersUsed.Contains(ident.Value))
+                {
+                    throw new ParserException($"The identifier {ident.Value} has already been defined in this object", ident.Location);
+                }
+
+                identifiersUsed.Add(ident.Value);
+
+                // Check whether it is implied
+                if (At().Type != TokenType.Colon)
+                {
+                    keyValues.Add(CreateIdentifier(ident), CreateIdentifier(ident));
+                } else if (At().Type == TokenType.Colon)
                 {
                     Eat();
-                    properties.Add(new Property()
-                    {
-                        Key = key.Value,
-                        IsAlone = true
-                    });
-                    continue;
+                    Expression expression = ParseExpression();
+                    keyValues.Add(CreateIdentifier(ident), expression);
                 }
 
-                // Shorthand key { key }
-                else if (At().TokenType == TokenType.CloseBrace)
+                // Check for comma or end of object
+                if (At().Type != TokenType.CloseBrace && At().Type != TokenType.Comma)
                 {
-                    properties.Add(new Property()
-                    {
-                        Key = key.Value,
-                        IsAlone = true,
-                    });
-                    continue;
+                    Expect(TokenType.Comma, "Expected comma here");
                 }
 
-                // Expect colon
-                Expect(TokenType.Colon, "Missing colon following identifier");
-
-                Expression value = ParseExpression();
-
-                properties.Add(new Property()
+                if (At().Type == TokenType.Comma)
                 {
-                    Key = key.Value,
-                    Value = value,
-                    Location = key.Location
-                });
+                    Eat();
+                    continue;
+                }
+                else break;
+            }
 
-                if (At().TokenType != TokenType.CloseBrace)
+            Expect(TokenType.CloseBrace);
+
+            return new ObjectLiteral(startingToken.Location, keyValues);
+        }
+
+        private Expression ParseArrayLiteral()
+        {
+            Token token = Expect(TokenType.OpenSquare);
+
+            List<Expression> items = new List<Expression>();
+
+            while (At().Type != TokenType.CloseSquare)
+            {
+                items.Add(ParseExpression());
+
+                if (At().Type != TokenType.Comma) break;
+                Eat();
+            }
+
+            Expect(TokenType.CloseSquare, "Expected closing of array literal");
+
+            return new ArrayLiteral(token.Location, items);
+        }
+
+        private Expression ParseLambdaArgumentList()
+        {
+            Token pipeToken = Eat();
+
+            List<Identifier> parameters = new List<Identifier>();
+
+            while (At().Type != TokenType.OpenPipe && At().Type != TokenType.EOF)
+            {
+                parameters.Add(CreateIdentifier(Expect(TokenType.Identifier)));
+
+                if (At().Type != TokenType.Comma) break;
+                if (At().Type == TokenType.Comma)
                 {
-                    Expect(TokenType.Comma, "Expected comma or close brace following key-value pair");
+                    Eat();
                 }
             }
 
-            Expect(TokenType.CloseBrace, "Expected close brace");
+            Expect(TokenType.OpenPipe);
 
-            return new ObjectLiteral()
+            return new LambdaArgumentList(pipeToken.Location, parameters);
+        }
+
+        private Expression ParseIdentifier(bool allowSpecialNames = false)
+        {
+            Identifier identifier;
+
+            if (!allowSpecialNames || At().Type == TokenType.Identifier)
+                identifier = CreateIdentifier(Eat());
+            else
             {
-                Properties = properties,
-                Location = openingbrace.Location
+                if (At().Type != TokenType.Identifier && At().Type != TokenType.Type)
+                    throw new ParserException($"Expected name here", At().Location);
+                Token a = Eat();
+                identifier = new Identifier(a.Location, a.StringValue);
+            }
+
+            return identifier;
+        }
+
+        private Expression ParseNumericLiteral()
+        {
+            Token numberToken = Eat();
+            return new NumericLiteral(numberToken.Location, double.Parse(numberToken.Value))
+            {
+                IsReal = numberToken.Value.Contains(".")
             };
         }
 
-        /// <summary>
-        /// Used for parsing general values, like literals, functions etc.
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="ParserException"></exception>
-        private Expression ParsePrimaryExpression()
+        private Expression ParseStringLiteral()
         {
-            TokenType token = At().TokenType;
+            Token stringToken = Eat();
 
-            switch (token)
-            {
-                case TokenType.Identifier:
-                    Token identToken = Eat();
-                    return new Identifier()
-                    {
-                        Symbol = identToken.Value,
-                        Location = identToken.Location
-                    };
-                // Literals - any number
-                case TokenType.Number:
-                    Token numberToken = Eat();
-                    return new NumericLiteral()
-                    {
-                        Value = double.Parse(numberToken.Value),
-                        Location = numberToken.Location,
-                        IsFloat = numberToken.Value.Contains('.')
-                    };
-                // Literals - any negative number
-                case TokenType.BinaryOperator:
-                    if (At().Value == Operators.ArithmeticOperators["Subtract"].Symbol)
-                    {
-                        Eat();
-                        Token numTok = Expect(TokenType.Number, "Expected number");
+            return new StringLiteral(stringToken.Location, stringToken.Value);
+        }
 
-                        return new NumericLiteral()
-                        {
-                            Value = -double.Parse(numTok.Value),
-                            Location = numTok.Location,
-                            IsFloat = numTok.Value.Contains('.')
-                        };
-                    }
+        private Expression ParseFunctionExpression()
+        {
+            Token functionToken = Eat();
+            TypeNameCombo combo = ParseName(true);
+            List<FunctionParameter> parameters = ParseParameterList();
+            Expression body = ParseBlock();
 
-                    throw new ParserException(new ZephyrExceptionOptions()
-                    {
-                        Token = At(),
-                        Error = $"Unexpected token: {At().TokenType}",
-                    });
-                // Literals - string
-                case TokenType.String:
-                    Token stringToken = Eat();
-                    return new StringLiteral()
-                    {
-                        Value = stringToken.Value,
-                        Location = stringToken.Location,
-                    };
-
-                // Literals - functions
-                case TokenType.Function:
-                    return ParseFunctionDeclaration();
-                // Literals - arrays
-                case TokenType.OpenSquare:
-                    Token openSquareToken = Eat();
-                    List<Expression> arr = new();
-
-                    while (At().TokenType != TokenType.CloseSquare && At().TokenType != TokenType.EOF)
-                    {
-                        arr.Add(ParseStatement());
-
-                        if (At().TokenType != TokenType.Comma) break;
-                        else Eat();
-                    }
-
-                    Token endSquare = Expect(TokenType.CloseSquare, "Expected closing of array");
-                    openSquareToken.Location = ExpandLocation(openSquareToken.Location, endSquare.Location);
-                    return new ArrayLiteral()
-                    {
-                        Items = arr,
-                        Location = openSquareToken.Location
-                    };
-                // Literals - objects
-                case TokenType.OpenBrace:
-                    return ParseObjectLiteral();
-                // Parameters, 1 - ( 2 + 2 ) etc.
-                case TokenType.OpenParan:
-                    Eat();
-
-                    Expression statement = (Expression)ParseStatement();
-                    Expect(TokenType.CloseParan, "Expected close paren");
-
-                    return statement;
-                // Variable reference
-                case TokenType.Varref:
-                    Token varrefToken = Eat();
-
-                    // Expect ident.
-                    Token varrefIdentifier = Expect(TokenType.Identifier, "Expected variable name");
-
-                    VarrefExpression varrefExpr = new()
-                    {
-                        Identifier = new Identifier()
-                        {
-                            Symbol = varrefIdentifier.Value,
-                            Location = varrefIdentifier.Location,
-                        },
-                        Location = varrefToken.Location
-                    };
-
-                    return varrefExpr;
-                case TokenType.Semicolon:
-                    throw new ParserException(new()
-                    {
-                        Token = At(),
-                        Error = "Unexpected semicolon"
-                    });
-                default:
-                    throw new ParserException(new ZephyrExceptionOptions()
-                    {
-                        Token = At(),
-                        Error = $"Unexpected token: {At().TokenType}",
-                    });
-            }
+            return new FunctionExpression(functionToken.Location, combo.Identifier, combo.Type, parameters, body);
         }
     }
 }

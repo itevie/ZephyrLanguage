@@ -4,41 +4,32 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Runtime.Values
+namespace ZephyrNew.Runtime.Values
 {
     internal enum ValueType
     {
         Null,
 
-        // Numbers
-        Int,
-        Long,
-        Float,
-        Double,
-
-        // Internal
-        Variable,
         Number,
-        NumberNotFloat,
 
-        // Others
-        String,
+        // ----- Functions -----
+        Function,
+        NativeFunction,
+        AsyncNativeFunction,
+
+        // ----- Other -----
         Boolean,
-        Maybe,
+        String,
+        Array,
         Object,
         Struct,
 
-        // Functions
-        NativeFunction,
-        Function,
-
-        // Iterables
-        Array,
-        Enumerable,
-
-        // Special
+        // ----- Special -----
         Any,
         Auto,
-        Event,
+        Void,
+        VariableReference,
+        Module,
+        Future,
     }
 }

@@ -3,21 +3,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Zephyr.Lexer.Syntax;
 
-namespace Zephyr.Lexer
+namespace ZephyrNew.Lexer
 {
+    /// <summary>
+    /// Represents a lexer token
+    /// </summary>
     internal class Token
     {
         public string Value;
-        public TokenType TokenType;
+        public string? StringValue = null;
+        public TokenType Type;
         public Location Location;
 
-        public Token(string value, TokenType tokenType, Location location)
+        public Token(string value, TokenType type, Location location, string? stringValue = null)
         {
             Value = value;
-            TokenType = tokenType;
+            Type = type;
             Location = location;
+            StringValue = stringValue;
         }
     }
 }

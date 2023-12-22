@@ -3,55 +3,61 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ZephyrNew.Runtime;
 
-namespace Zephyr.Lexer.Syntax
+namespace ZephyrNew.Lexer.Syntax
 {
     internal class Keywords
     {
-        public static Dictionary<string, TokenType> TheKeywords = new()
+        public static Dictionary<string, TokenType> KeywordList = new Dictionary<string, TokenType>()
         {
-            { "var", TokenType.Let },
-            { "const", TokenType.Const },
-            { "export", TokenType.Export },
-            { "func", TokenType.Function },
+            { "var", TokenType.Var },
             { "struct", TokenType.Struct },
-            { "switch", TokenType.Switch },
-            { "case", TokenType.Case },
-            { "passthrough", TokenType.Passthrough },
-            { "passthru", TokenType.Passthrough },
-            { "default", TokenType.Default },
-            { "return", TokenType.Return },
+            { "fn", TokenType.Function},
+            { "params", TokenType.Params },
+            //{ "f", TokenType.FunctionExpression},
+            { "return", TokenType.Return},
             { "if", TokenType.If },
-            { "while", TokenType.While },
-            { "for", TokenType.For },
             { "else", TokenType.Else },
-            { "try", TokenType.Try },
-            { "catch", TokenType.Catch },
-            { "import", TokenType.Import },
-            { "as", TokenType.As },
-            { "varref", TokenType.Varref },
+
+            { "for", TokenType.For },
+            { "loop", TokenType.Loop },
             { "break", TokenType.Break },
             { "continue", TokenType.Continue },
-            { "event", TokenType.Event }
+
+            { "try", TokenType.Try },
+            { "catch", TokenType.Catch },
+            { "throw", TokenType.Throw },
+
+
+            { "from", TokenType.From },
+            { "import", TokenType.Import},
+            { "export", TokenType.Export },
+            { "as", TokenType.As},
+
+            { "echo", TokenType.Echo },
+
+            { "await", TokenType.Await },
         };
 
-        public static Dictionary<string, Runtime.Values.ValueType> Types = new()
+        public static Dictionary<string, ValueType> Types = new Dictionary<string, ValueType>()
         {
-            { "int", Runtime.Values.ValueType.Int },
-            { "long", Runtime.Values.ValueType.Long },
-            { "float", Runtime.Values.ValueType.Float },
+            { "number", Runtime.Values.ValueType.Number },
+            //{ "long", Runtime.Values.ValueType.Long },
+            //{ "float", Runtime.Values.ValueType.Integer },
             //{ "double", Runtime.Values.ValueType.Double },
             { "string", Runtime.Values.ValueType.String },
-            { "any", Runtime.Values.ValueType.Any },
-            { "auto", Runtime.Values.ValueType.Auto },
             { "bool", Runtime.Values.ValueType.Boolean },
-            { "func", Runtime.Values.ValueType.Function },
+            { "any", Runtime.Values.ValueType.Any },
             { "object", Runtime.Values.ValueType.Object },
+            { "module", Runtime.Values.ValueType.Module },
+            { "void", Runtime.Values.ValueType.Void },
+            { "Fn", Runtime.Values.ValueType.Function },
         };
 
-        public static Dictionary<string, Runtime.Values.Modifier> Modifiers = new()
+        public static Dictionary<string, Modifier> Modifiers = new Dictionary<string, Modifier>()
         {
-            { "final", Runtime.Values.Modifier.Final }
+            { "final", Modifier.Final },
         };
     }
 }

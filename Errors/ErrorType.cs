@@ -4,13 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Errors
+namespace ZephyrNew.Errors
 {
     internal enum ErrorType
     {
-        LexerError,
-        ParserError,
-        RuntimeError,
-        UserDefinedError
+        Generic,
+        Lexer,
+        Parser,
+        Runtime,
+        UserDefined,
     }
 }

@@ -4,70 +4,85 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Zephyr.Lexer.Syntax
+namespace ZephyrNew.Lexer
 {
     internal enum TokenType
     {
-        // Literal Types
-        Number,
+        // ----- Literals -----
         Identifier,
-        SpecialIdentifier,
+        Number,
         String,
         Type,
-
-        // Keywords
-        Let,
-        Event,
-        Const,
-        Export,
-        Function,
-        Struct,
-        Return,
-        Break,
-        Continue,
-        If,
-        While,
-        For,
-        Else,
-        Try,
-        Catch,
-        Import,
-        As,
-        Varref,
-        Switch,
-        Case,
-        Passthrough,
-        Default,
-
         Modifier,
 
-        // Basic Syntax
-        Comma,
-        Dot,
-        DoubleDot, 
-        DoubleDotUninclusive,
-        Colon,
+        // ----- Operators -----
+        BinaryOperator,
+        UnaryOperator,
+        LogicalOperator,
+        AssignmentOperator,
+        ComparisonOperator,
+        CastOperator,
+
+        // ----- Basic Syntax -----
         Semicolon,
         QuestionMark,
-        ForEachIn,
-        Cast,
+        Comma,
+        Dot,
+        Colon,
         Pipe,
-        EOF,
+        Spread,
+        Decorator,
 
-        // Operators
-        UnaryOperator,
-        BinaryOperator,
-        LogicalOperator,
-        ComparisonOperator,
-        AssignmentOperator,
-        BitwiseOperator,
-
-        // Brackets
-        OpenParan,
-        CloseParan,
+        // ----- Brackets -----
+        OpenSquare,
+        CloseSquare,
         OpenBrace,
         CloseBrace,
-        OpenSquare,
-        CloseSquare
+        OpenParenthesis,
+        CloseParenthesis,
+        OpenPipe,
+
+        // ----- Keywords -----
+        Var,
+        Const,
+
+        Function,
+        Params,
+        FunctionExpression,
+        Lambda,
+        Return,
+
+        Struct,
+
+        Await,
+
+        If,
+        Else,
+
+        Try,
+        Catch,
+        Throw,
+
+        Import,
+        Export,
+        From,
+        As,
+
+        Loop,
+        For,
+        While,
+        Do,
+        Break,
+        Continue,
+
+        Range,
+        RangeUninclusive,
+        Step,
+
+        In,
+
+        // ----- Special -----
+        EOF,
+        Echo,
     }
 }

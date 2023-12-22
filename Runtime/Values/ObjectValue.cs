@@ -1,42 +1,87 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using Zephyr.Lexer;
-using Zephyr.Parser;
 
-namespace Zephyr.Runtime.Values
+namespace ZephyrNew.Runtime.Values
 {
     internal class ObjectValue : RuntimeValue
     {
-        public Dictionary<string, RuntimeValue> Properties = new();
-
-        public void AddProperty(string key, RuntimeValue value, Location loc)
-        {
-            CanModify(loc);
-
-            if (this.Type == ValueType.Struct)
-            {
-                // Check if the object complies with the struct
-            }
-        }
-
-        private void CanModify(Location loc)
-        {
-            if (IsFinal())
-            {
-                throw new RuntimeException(new()
-                {
-                    Location = Handlers.Helpers.GetLocation(loc),
-                    Error = $"The object is marked as final and cannot be edited"
-                });
-            }
-        }
-
         public ObjectValue()
         {
-            Type = ValueType.Object;
+            Type = new VariableType(ValueType.Object);
+        }
+
+        public ObjectValue(object obj)
+        {
+            Type = new VariableType(ValueType.Object);
+
+            // Check type
+            if (obj is string or int or bool or float or double)
+            {
+                throw new Exception($"Cannot create an object from a {obj.GetType()}");
+            }
+
+            foreach (PropertyInfo property in obj.GetType().GetProperties())
+            {
+                try
+                {
+                    string name = property.Name;
+                    object? value = property.GetValue(obj) ?? throw new Exception($"Got null whilst creating object (prop {name})");
+
+                    // Check types - int
+                    if (value is int intv)
+                    {
+                        Properties.Add(name, new NumberValue(intv));
+                    }
+
+                    else if (value is double doublev)
+                    {
+                        Properties.Add(name, new NumberValue(doublev));
+                    }
+
+                    // Check if it is already runtimevalue
+                    else if (value is RuntimeValue rvv)
+                    {
+                        Properties.Add(name, rvv);
+                    }
+
+                    else if (value is string strv)
+                    {
+                        Properties.Add(name, new StringValue(strv));
+                    }
+
+                    else if (value is bool boolv)
+                    {
+                        Properties.Add(name, new BooleanValue(boolv));
+                    }
+
+                    // Object
+                    else if (value is object objv)
+                    {
+                        Properties.Add(name, new ObjectValue(objv));
+                    }
+
+                    // Does not know how to handle this
+                    else
+                    {
+                        throw new Exception($"Cannot handle type {value.GetType()} for property {name}");
+                    }
+                }
+                catch (Exception e)
+                {
+                    throw;
+                }
+            }
+        }
+
+        public override string Visualise(bool alone = true, bool noColor = false)
+        {
+            return Helpers.VisualiseObject(Properties);
         }
     }
 }
